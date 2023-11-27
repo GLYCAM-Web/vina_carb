@@ -510,8 +510,11 @@ void model::assign_types() {
 			case EL_TYPE_Br   : x = XS_TYPE_Br_H; break;
 			case EL_TYPE_I    : x = XS_TYPE_I_H; break;
 			case EL_TYPE_Met  : x = XS_TYPE_Met_D; break;
-                        case EL_TYPE_NR   : x = XS_TYPE_N_R; break;
-                        //case EL_TYPE_A    : x = XS_TYPE_C_A; break;
+			case EL_TYPE_NK   : x = XS_TYPE_N_K; break; //Amika
+                        case EL_TYPE_NR   : x = XS_TYPE_N_R; break; //Amika
+                        case EL_TYPE_ON   : x = XS_TYPE_O_N; break; //Amika
+                        case EL_TYPE_OS   : x = XS_TYPE_O_S; break; //Amika
+            		case EL_TYPE_SO   : x = XS_TYPE_S_O; break; //Amika
 			case EL_TYPE_SIZE : break;
 			default: VINA_CHECK(false);
 		}
@@ -1133,19 +1136,15 @@ return e;
 
 fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, const conf& c, change& g/*, std::vector< std::vector<int> > glyco_info*/,const fl chi_coeff, const fl chi_cutoff) { // clean up
 	set(c);
-	/*VINA_FOR_IN(i, this->minus_forces){
-		this->minus_forces[i].assign(0);
-	}*/
-	//this->adjust_out_of_box_coords();
 
 	fl chi_energy = 0.0;
 	chi_energy=eval_chi(chi_coeff,chi_cutoff);
 
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
-	//std::cout << "Ig eval deriv is_non_cache: " << ig.is_non_cache << std::endl;
-	pr dH_minusTdS = this->eval_chpi(false, ig.is_non_cache);//pr.first = enthalpy, pr.second = entropy
-	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
+	//For Amika: this is Yao's CH-pi scoring function. Please always comment it out. 
+	//pr dH_minusTdS = this->eval_chpi(false, ig.is_non_cache);//pr.first = enthalpy, pr.second = entropy
+	//e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1211,12 +1210,10 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 	this->adjusted_atom_indices.clear();*/
 
 	fl e = eval(p, ig, v, c); // sets c
-	//Compute CH-pi energy. This term isn't part of the scoring function object.
 
-	//std::cout << "Model eval adjusted is non cache: " << ig.is_non_cache << std::endl;
-	pr dH_minusTdS = this->eval_chpi(true, ig.is_non_cache);
-        //Add both enthalpy and entropy to e.
-        e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
+	//For Amika: this is Yao's new CHpi scoring function (under development), should always be commented out. 
+	//pr dH_minusTdS = this->eval_chpi(true, ig.is_non_cache);
+        //e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
 	return sf.conf_independent(*this, e - intramolecular_energy);
 }
 

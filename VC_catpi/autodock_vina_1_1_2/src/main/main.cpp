@@ -179,11 +179,13 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 		fl intramolecular_energy = m.eval_intramolecular(prec, authentic_v, c);
 		naive_non_cache nnc(&prec); // for out of grid issues
 		e = m.eval_adjusted(sf, prec, nnc, authentic_v, c, intramolecular_energy);
+		fl vce = m.eval_chi(chi_coeff,chi_cutoff);
+		e+=vce; 
                 log << "Affinity: " << std::fixed << std::setprecision(5) << e << " (kcal/mol)";
 		log.endl();
 		//std::cout << "Get individual term values" << std::endl;
 		flv term_values = t.evale_robust(m);
-                VINA_CHECK(term_values.size() == 7); 
+                VINA_CHECK(term_values.size() == 10); 
 		log << "Intermolecular contributions to the terms, after weighting:\n";
 		log << std::setprecision(5);
 /*		log << "    gauss 1     : " << term_values[0] << '\n';
@@ -199,18 +201,24 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 log << "    Hydrogen    : " << term_values[4]*weights[4] << '\n';
                 log << "    cat-pi      : " << term_values[5]*weights[5] << '\n';
                 log << "    ch-pi       : " << term_values[6]*weights[6] << '\n';
-
-		pr chpi_dH_TdS = m.eval_chpi(true, nnc.is_non_cache);
-		fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
-                log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
+		log << "    qrepulsion  : " << term_values[7]*weights[7] << '\n';
+                log << "    qattraction : " << term_values[8]*weights[8] << '\n';
+                log << "    Hydrogen 2  : " << term_values[9]*weights[9] << '\n';
+		log << "    chi penalty : " << vce << '\n';
 
 		VINA_CHECK(weights.size() == term_values.size() + 1);
 		fl e2 = 0;
+
+		//For Amika: this is Yao's CHpi scoring function(under devlopent), always comment out. 
+		//pr chpi_dH_TdS = m.eval_chpi(true, nnc.is_non_cache);
+		//fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
+                //log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
+
+		//Yao added 20230618
+		//e2 += chpi_dG;
 		VINA_FOR_IN(i, term_values)
 			e2 += term_values[i] * weights[i];
 
-		//Yao added 20230618
-		e2 += chpi_dG;
 
 		e2 = sf.conf_independent(m, e2);
 		if(e < 100 && std::abs(e2 - e) > 0.05) {
@@ -500,6 +508,10 @@ Thank you!\n";
 		fl weight_rot         =  0.05846;
                 fl weight_catpi       = -0.40000; //
                 fl weight_chpi        = -0.30000;
+		fl weight_qrepulsion  =  1.00000; //Amika
+                fl weight_qattraction1=  1.00000; //Amika
+                fl weight_hydrogen2   = -0.587439; //Amika
+        	fl grid_size          =  0.375; //Amika
 
 		bool score_only = false, local_only = false, randomize_only = false, help = false, help_advanced = false, version = false; // FIXME
 		bool chpi_use_hydrogen = false;
@@ -541,6 +553,10 @@ Thank you!\n";
                         ("weight_catpi", value<fl>(&weight_catpi)->default_value(weight_catpi),                   "Cation-pi weight") //
                         ("weight_chpi", value<fl>(&weight_chpi)->default_value(weight_chpi),                   "CH-pi weight") //
 			("weight_rot", value<fl>(&weight_rot)->default_value(weight_rot),                         "N_rot weight")
+			("weight_qrepulsion", value<fl>(&weight_qrepulsion)->default_value(weight_qrepulsion),    "q repulsion weight") //Amika
+                        ("weight_qattraction1", value<fl>(&weight_qattraction1)->default_value(weight_qattraction1), "q attraction1 weight") //Amika
+                        ("weight_hydrogen2", value<fl>(&weight_hydrogen2)->default_value(weight_hydrogen2), "Hydrogen bond 2 weight") //Amika
+                        ("grid_size", value<fl>(&grid_size)->default_value(grid_size), "grid size") //Amika
 			("chpi_use_hydrogen",     bool_switch(&chpi_use_hydrogen),     "Consider H during CH-π calculation, instead of carbon only")
 		;
 
@@ -682,10 +698,14 @@ Thank you!\n";
 		weights.push_back(weight_hydrogen);
                 weights.push_back(weight_catpi); //
                 weights.push_back(weight_chpi);  //Yao added 02/23/2021
+		weights.push_back(weight_qrepulsion); //Amika
+                weights.push_back(weight_qattraction1); //Amika
+                weights.push_back(weight_hydrogen2);
 		weights.push_back(5 * weight_rot / 0.1 - 1); // linearly maps onto a different range, internally. see everything.cpp
 
 		if(search_box_needed) { 
-			const fl granularity = 0.375;
+			//const fl granularity = 0.375;
+			const fl granularity = grid_size;
 			vec span(size_x,   size_y,   size_z);
 			vec center(center_x, center_y, center_z);
 			VINA_FOR_IN(i, gd) {

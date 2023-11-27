@@ -214,6 +214,22 @@ struct non_dir_h_bond : public usable {
 	}
 };
 
+struct non_dir_h_bond2 : public usable {
+        fl good;
+        fl bad;
+        non_dir_h_bond2(fl good_, fl bad_, fl cutoff_) : usable(cutoff_), good(good_), bad(bad_) {
+                name = std::string("non_dir_h_bond2(g=") + to_string(good) + ", b=" + to_string(bad) + ")";
+        }
+        fl eval(sz t1, sz t2, fl r) const {
+                if(xs_h_bond_possible2(t1, t2))
+                        {
+			//std::cout<<"non_dir_h_bond2 "<<t1<<" "<<t2<<" "<<slope_step(bad, good, r - optimal_distance(t1, t2))<<"\n";
+			return slope_step(bad, good, r - optimal_distance(t1, t2));
+                        }
+                return 0;
+        }
+};
+
 struct catpi : public usable {
         fl good;
 	fl bad;
@@ -271,7 +287,7 @@ struct chpi_gaussian : public usable { //Yao's CH-pi function 3
 	}
 	fl eval(sz t1, sz t2, fl r) const {
 		//Now using the ring-dependent term. Let this function always return zero.
-		return 0;
+		//return 0;
 
                 if(xs_chpi_possible(t1, t2)){
  			return g_coeff * std::exp(-sqr(r-chpi_miu)/g_denominator);
@@ -279,6 +295,31 @@ struct chpi_gaussian : public usable { //Yao's CH-pi function 3
                 }
 
                 return 0;
+        }
+};
+
+//Amika added structure qrepulsion
+struct qrepulsion : public usable {
+        fl cap;
+        qrepulsion(fl cutoff_) : usable(cutoff_) {
+                name = std::string("qrepulsion(c=") + to_string(cutoff) + ")";
+        }
+        fl eval(sz t1, sz t2, fl r) const {
+                fl d = r - (optimal_distance(t1, t2));
+        fl e = xs_q_int(t1,t2,3)/(r);
+                return 332*e;   
+        }
+};
+
+struct qattraction1 : public usable {
+        fl cap;
+        qattraction1(fl cutoff_) : usable(cutoff_) {
+                name = std::string("qattraction1(c=") + to_string(cutoff) + ")";
+        }
+        fl eval(sz t1, sz t2, fl r) const {
+                fl d = r - (optimal_distance(t1, t2));
+                fl e = xs_q_int(t1,t2,1)/(r);
+                return 332*e;
         }
 };
 
@@ -472,6 +513,10 @@ everything::everything() { // enabled according to design.out227
 	//add(1, new chpi(0, 0, cutoff)); //Yao added Feb 09 2021. The good and bad cutoff are useless in this term, so just give 0 to both. 
 	//add(1, new chpi_stepsize(4.05, 4.71, cutoff)); //Yao added Apr 22 2021. The good and bad cutoff are for raw distance, not for optimal distance. 
 	add(1, new chpi_gaussian(-0.2, -0.1, cutoff)); 
+
+	add(1, new qrepulsion(cutoff)); //Amika
+        add(1, new qattraction1(cutoff)); //Amika
+        add(1, new non_dir_h_bond2(-0.7, 0, cutoff));
 
 	// conf-independent
 	//add(d, new num_ligands());
