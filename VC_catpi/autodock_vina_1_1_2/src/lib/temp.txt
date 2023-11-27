@@ -1,0 +1,100 @@
+void model::eval_chpi_entropy_set_force(vec* h, sz closest_h_i, sz h_closest_index, std::vector<flv>& h_ring_dists, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic){
+	szv& ring_atom_indices = r.all_atom_indices;
+	vptrv& ring_atom_coords = r.all_atom_coord_ptrs;
+	sz ring_size = r.num_ring_atoms;
+	vec& centroid = r.centroid;
+	vec& normal = r.normal;
+
+	flv edge_dist_sum(ring_size, 0);		
+	flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
+	std::cout << "Ring size: " << ring_size << " and closest_h_ring_dists size: " << closest_h_ring_dists.size() << std::endl;
+	std::cout << "Closest h index is: " << closest_h_i << std::endl;
+
+	VINA_FOR(i, ring_size){
+		sz j = (i < ring_size -1) ? i+1 : 0;
+		edge_dist_sum[i] = (closest_h_ring_dists[i] + closest_h_ring_dists[j]);
+	}
+
+	/*VINA_FOR_IN(i, ring_atom_coords){
+		vec* ra = ring_atom_coords[i];
+		vec* next = (i < ring_size -1) ? ring_atoms[i+1] : ring_atoms[0];
+		fl rh = std::sqrt(sqr(h[0]-ra[0]) + sqr(h[1]-ra[1]) + sqr(h[2]-ra[2]));
+		fl rh_next = std::sqrt(sqr(h[0]-next[0]) + sqr(h[1]-next[1]) + sqr(h[2]-next[2]));
+		edge_dist_sum[i] = (rh + rh_next);
+	}*/
+
+	sz closest_edge_index = 0; fl lowest_sum_dist = max_fl;
+	VINA_FOR_IN(i, edge_dist_sum){
+		fl& dist_sum = edge_dist_sum[i];
+		if (dist_sum < lowest_sum_dist){
+			lowest_sum_dist = dist_sum;
+			closest_edge_index = i;			
+		}
+	}
+
+	//a1 and a2 are the two atoms forming the edge closest to the hydrogen atom.
+	vec* a1 = ring_atom_coords[closest_edge_index];
+	vec* a2 = (closest_edge_index < ring_size -1) ? ring_atom_coords[closest_edge_index+1] : ring_atom_coords[0];
+	fl omega = GetDihedral(h, a1, a2, &centroid);
+	std::cout << "Omega degrees: " << omega / M_PI * 180.0000 << std::endl;
+	fl omega_abs = std::abs(omega);
+
+	//Project hydrogen onto the plane, calling it h_prime
+	vec a1h = *h - *a1;
+	fl ahdp = a1h * normal; //Dot product betwwen a1h and ring normal
+	fl a1h_vo = std::abs(ahdp); //Vertical distance between h and ring plane.
+
+	//Make a vector parallel to the ring normal, starting at h_prime, ending at hydrogen.
+	vec vertical(normal);
+        vertical *= a1h_vo;
+        if (ahdp < 0) vertical *= -1; //If hydrogen and ring normal on oppposite of ring, flip vertical to be on the same side. 
+	vec h_prime = *h - vertical;
+
+	//In triangle h-a1-a2, draw the height on edge a1-a2, intercepting a1-a2 on point b
+	vec a1a2 = *a2 - *a1;
+	fl a1a2_length = magnitude(a1a2);
+	fl a1b_length = std::abs(a1h * a1a2) / a1a2_length;
+	vec a1b(a1a2); a1b *= (a1b_length / magnitude(a1a2));
+	vec b = *a1 + a1b;
+	vec b_h_prime = h_prime - b;
+
+	fl b_hp_length = magnitude(b_h_prime);
+	fl ho_effective = 0;
+	vec entropic_force(b_h_prime); normalize_vec_in_place(entropic_force);
+
+	if (omega_abs >= half_pi){
+		std::cout << "Omega beyond half pi." << std::endl;
+		ho_effective = chpi_ho_max - chpi_ho_out_of_edge + b_hp_length;
+		if (ho_effective >= chpi_ho_max) return;
+	}
+	else{
+		std::cout << "Omega smaller than half pi." << std::endl;
+		entropic_force *= -1;
+		ho_effective = 	chpi_ho_max - chpi_ho_out_of_edge - b_hp_length;
+	}
+
+	ho_effective = std::max(ho_effective, chpi_ho_epsilon);
+	std::cout << "Entropy ho effective: " << ho_effective << std::endl;
+	fl minusTdS = this->eval_chpi_entropy(ho_effective);
+	dH_minusTdS.second += minusTdS;
+	fl deriv = -0.616 / ho_effective;
+	entropic_force *= deriv;
+
+	if (ligand_aliphatic){
+		this->minus_forces[h_closest_index] += entropic_force;
+	}
+	else{
+
+        	entropic_force *= -1; //Reverse the direction of derivative so that it is still receptor->ligand
+		vec force_per_ring_atom = entropic_force;
+        	force_per_ring_atom /= (fl) ring_size;
+
+        	VINA_FOR(i, r.num_ring_atoms){
+                	sz ra_index = ring_atom_indices[i];
+                	//Apply total entropy evenly on each ring atom
+                	this->minus_forces[ra_index] += force_per_ring_atom;
+        	}
+	}
+	return;
+	
+}
