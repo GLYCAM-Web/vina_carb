@@ -2093,8 +2093,8 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 		fl e_total = e + e2; fl deriv_total = deriv + deriv2;
                 this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
-		fl dor = this->weight_chpi * this_pair_e_dor.second / r;
-		//fl dor = this->weight_chpi * this_pair_e_dor.second;
+		//fl dor = (r > 1) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
+		fl dor = this->weight_chpi * this_pair_e_dor.second;
 		dH += e_total;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
 
