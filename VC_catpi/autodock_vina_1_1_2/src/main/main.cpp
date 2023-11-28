@@ -346,7 +346,7 @@ void main_procedure(model& m, const boost::optional<model>& ref, // m is non-con
 	doing(verbosity, "Setting up the scoring function", log);
 //	std::cout<<"MAIN_PROCEDURE: size="<<glycoinfo.size()<<"\n";
 	everything t;
-        VINA_CHECK(weights.size() == 8);
+        VINA_CHECK(weights.size() == 11);
 
 	weighted_terms wt(&t, weights);
 
