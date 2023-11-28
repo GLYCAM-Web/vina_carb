@@ -1,3 +1,1 @@
-*.o
-VC_catpi/autodock_vina_1_1_2/build/linux/release/vina-carb
-VC_catpi/autodock_vina_1_1_2/build/linux/release/vina-split
+release/
