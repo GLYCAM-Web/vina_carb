@@ -178,7 +178,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 	if(score_only) {
 		fl intramolecular_energy = m.eval_intramolecular(prec, authentic_v, c);
 		naive_non_cache nnc(&prec); // for out of grid issues
-		e = m.eval_adjusted(sf, prec, nnc, authentic_v, c, intramolecular_energy);
+		e = m.eval_adjusted(sf, prec, nnc, authentic_v, c, intramolecular_energy, true);
                 log << "Affinity: " << std::fixed << std::setprecision(5) << e << " (kcal/mol)";
 		log.endl();
 		//std::cout << "Get individual term values" << std::endl;
@@ -200,7 +200,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 log << "    cat-pi      : " << term_values[5]*weights[5] << '\n';
                 log << "    ch-pi       : " << term_values[6]*weights[6] << '\n';
 
-		pr chpi_dH_TdS = m.eval_chpi(true, nnc.is_non_cache);
+		pr chpi_dH_TdS = m.eval_chpi(true);
 		fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
                 log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 
@@ -225,7 +225,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 		refine_structure(m, prec, nc, out, authentic_v, glycoinfo, chi_coeff, chi_cutoff, par.mc.ssd_par.evals);
 		done(verbosity, log);
 		fl intramolecular_energy = m.eval_intramolecular(prec, authentic_v, out.c);
-		e = m.eval_adjusted(sf, prec, nc, authentic_v, out.c, intramolecular_energy);
+		e = m.eval_adjusted(sf, prec, nc, authentic_v, out.c, intramolecular_energy, false);
 		
 		log << "Affinity: " << std::fixed << std::setprecision(5) << e << " (kcal/mol)";
 		log.endl();
@@ -260,7 +260,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 				if(not_max(out_cont[i].e))
 					{
 					change g(m.get_size());
-					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy);
+					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, false);
 					out_cont[i].vce=m.eval_chi(chi_coeff,chi_cutoff);
 					out_cont[i].e+=out_cont[i].vce;
 					} 

@@ -447,7 +447,7 @@ struct model {
 	fl eval_intramolecular(                            const precalculate& p,                  const vec& v, const conf& c);
 	fl eval_internal_torsional(const precalculate& p, const vec& v, const conf& c);
 	fl eval_chi(const fl chi_coeff, const fl chi_cutoff);
-	fl eval_adjusted      (const scoring_function& sf, const precalculate& p, const igrid& ig, const vec& v, const conf& c, fl intramolecular_energy);
+	fl eval_adjusted      (const scoring_function& sf, const precalculate& p, const igrid& ig, const vec& v, const conf& c, fl intramolecular_energy, bool score_in_place);
 
 
 	fl rmsd_lower_bound(const model& m) const; // uses coords
@@ -502,17 +502,13 @@ struct model {
 	sz num_r_aro_rings;
 	sz num_l_aro_rings;
 
-	/*fl eval_chpi(bool fast);
-	void eval_chpi_c(fl& e1, fl& tds, bool fast);
-	void eval_chpi_h(fl& e1, fl& e2, fl& e_repul, fl& tds, bool fast);
-	void eval_chpi_c_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, fl& e1, fl& tds, bool fast);
-	void eval_chpi_h_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, fl& e1, fl& e2, fl& e_repul, fl& tds, bool fast);*/
-
-	pr eval_chpi(bool fast, bool is_non_cache);
-	void eval_chpi_c(pr& dH_minusTdS, bool fast, bool is_non_cache);
-	void eval_chpi_h(pr& dH_minusTdS, bool fast, bool is_non_cache);
-	void eval_chpi_c_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, pr& dH_minusTdS, bool fast, bool is_non_cache);
-	pr eval_chpi_h_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, pr& dH_minusTdS, bool fast, bool is_non_cache, bool add_forces);
+	pr eval_chpi(bool score_in_place);
+	void eval_chpi_c(pr& dH_minusTdS, bool score_in_place);
+	void eval_chpi_h(pr& dH_minusTdS, bool score_in_place);
+	void eval_chpi_c_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, pr& dH_minusTdS, bool score_in_place);
+	void eval_chpi_h_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, pr& dH_minusTdS, bool score_in_place);
+	int choose_interacting_h(std::map<sz, fl>& h_centroid_dist, szv& ip_hs);
+	fl get_chpi_scaling_factor(sz num_h_neghbors, sz num_ip_h);
 
 	fl eval_chpi_enthalpy_c(fl r);
 	fl eval_chpi_enthalpy_h(fl r);
@@ -554,8 +550,8 @@ struct model {
 	void eval_chpi_entropy_set_force(vec* h_closest, sz closest_h_i, sz h_closest_index, std::vector<flv>& h_ring_dists, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic);
 	void eval_chpi_entropy_set_force2(vec* h, sz closest_h_i, sz h_closest_index, std::vector<flv>& h_ring_dists, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic);
 
-	fl eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic, bool add_forces);
-	fl eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_closest_index, ring_attribute& r, vec& centroid, pr& dH_minusTdS, bool ligand_aliphatic, bool add_forces);
+	void eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic);
+	void eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_closest_index, ring_attribute& r, vec& centroid, pr& dH_minusTdS, bool ligand_aliphatic);
 
 	//Yao added 20230602
         //Could contain multiple ligands. Each vector of aptrv is all the aromatic rings of that ligand.

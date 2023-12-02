@@ -1143,8 +1143,7 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
-	//std::cout << "Ig eval deriv is_non_cache: " << ig.is_non_cache << std::endl;
-	pr dH_minusTdS = this->eval_chpi(false, ig.is_non_cache);//pr.first = enthalpy, pr.second = entropy
+	pr dH_minusTdS = this->eval_chpi(false);
 	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
@@ -1204,7 +1203,7 @@ fl model::eval_intramolecular(const precalculate& p, const vec& v, const conf& c
 }
 
 
-fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p, const igrid& ig, const vec& v, const conf& c, fl intramolecular_energy) {
+fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p, const igrid& ig, const vec& v, const conf& c, fl intramolecular_energy, bool score_in_place) {
 	/*VINA_FOR_IN(i, this->coords){ //Yao 20231031: Is this necessary?
                 this->adjusted_coords[i] = this->coords[i];
         }
@@ -1213,8 +1212,7 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 	fl e = eval(p, ig, v, c); // sets c
 	//Compute CH-pi energy. This term isn't part of the scoring function object.
 
-	//std::cout << "Model eval adjusted is non cache: " << ig.is_non_cache << std::endl;
-	pr dH_minusTdS = this->eval_chpi(true, ig.is_non_cache);
+	pr dH_minusTdS = this->eval_chpi(score_in_place);
         //Add both enthalpy and entropy to e.
         e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
 	return sf.conf_independent(*this, e - intramolecular_energy);
@@ -1820,15 +1818,13 @@ fl model::eval_chpi_entropy(fl horizontal_offset){
 	return (-0.616 * std::log(ho_effective) + 0.2144);  
 }
 
-void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool fast, bool is_non_cache){
+void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool score_in_place){
 	//std::cout << "Eval C " << std::endl;
 	fl dH = 0.00;
 	bool& ligand_aliphatic = c.is_ligand;
-	bool c_use_adjusted_coords = (ligand_aliphatic && is_non_cache);
-        bool ring_use_adjusted_coords = (!ligand_aliphatic && is_non_cache);
 
 	sz& carbon_index = c.carbon_atom_index;
-	vec* c_coord = (c_use_adjusted_coords) ? this->adjusted_coord_ptrs[carbon_index] : c.c_coord;
+	vec* c_coord = c.c_coord;
 	vec& centroid = r.centroid;
 
 	vec centroid_c; centroid_c = *c_coord - centroid;
@@ -1844,7 +1840,7 @@ void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	VINA_FOR(i, r.num_aromatic_carbons){
 		//fl(&rd)[3] = ar_coord_ptrs[i]->data; //rd = ring atom coord data
 		sz& ar_atom_index = ar_atom_indices[i];
-		vec* rc = (ring_use_adjusted_coords) ? this->adjusted_coord_ptrs[ar_atom_index] : ar_coord_ptrs[i];
+		vec* rc = ar_coord_ptrs[i];
 		//A vector of ligand coord - receptor coord;
 		vec ra_to_la = (ligand_aliphatic) ? *c_coord - *rc : *rc - *c_coord;
 		fl r = magnitude(ra_to_la);
@@ -1853,7 +1849,7 @@ void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
                 this_ring_interacting = true;
 		interacting_indices.push_back(ar_atom_index);
 
-		pr e_dor = (fast) ? this->eval_chpi_enthalpy_c_fast(r): this->eval_chpi_enthalpy_c_deriv(r);
+		pr e_dor = (score_in_place) ? this->eval_chpi_enthalpy_c_fast(r): this->eval_chpi_enthalpy_c_deriv(r);
 
 		dH += e_dor.first;
 		vec this_pair_deriv = ra_to_la;  this_pair_deriv *= e_dor.second;
@@ -1882,7 +1878,7 @@ void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	bool entropy_in_cutoff = (vo < chpi_vo_max_c && ho < chpi_ho_max);
 	if (!entropy_in_cutoff) return;
 
-	pr entropy_e_dor = (fast) ? this->eval_chpi_entropy_fast(ho) : this->eval_chpi_entropy_deriv(ho);
+	pr entropy_e_dor = (score_in_place) ? this->eval_chpi_entropy_fast(ho) : this->eval_chpi_entropy_deriv(ho);
 	fl minusTdS = -this->weight_chpi * entropy_e_dor.first; fl tds_dor = -this->weight_chpi * entropy_e_dor.second; 
 	dH_minusTdS.second += minusTdS;
 
@@ -1915,12 +1911,11 @@ void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	//return (dH - eval_chpi_entropy(ho));
 }
 
-pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool fast, bool is_non_cache, bool add_forces){
-	if (c.num_h_neighbors == 0) return pr(0,0);
+void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool score_in_place){
+	if (c.num_h_neighbors == 0) return;
 
 	bool& ligand_aliphatic = c.is_ligand;
 	sz& carbon_index = c.carbon_atom_index;
-	//if (ligand_aliphatic && has(this->adjusted_atom_indices, carbon_index)) return;
 
 	szv& h_neighbor_indices = c.h_neighbor_indices;
 	vptrv& h_coords = c.h_coords;
@@ -1928,7 +1923,6 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 
 	vec& centroid = r.centroid;
 	vec& normal = r.normal;
-       	//vec* c_coord = (ligand_aliphatic) ? this->adjusted_coord_ptrs[carbon_index] : c.c_coord;
        	vec* c_coord = c.c_coord;
 	vec cc = *c_coord - centroid;
 	fl ccl = magnitude(cc);
@@ -1949,6 +1943,7 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
         szv& ring_atom_indices = r.all_atom_indices;
 
 	std::map<sz, fl> h_centroid_dist;
+	szv ip_hs;
 
 	VINA_FOR(i, c.num_h_neighbors){
                 sz h_index = h_neighbor_indices[i];
@@ -1995,6 +1990,9 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 
 			if (h_centroid_dist.find(i) == h_centroid_dist.end()){
 				h_centroid_dist[i] = hcl;
+				if (induction_polarization){
+					ip_hs.push_back(i);
+				}
 			}
 			
 			pr this_pair_e_dor(0,0);	
@@ -2036,8 +2034,6 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 
 			this_pair_e_dor.second *= (this->weight_chpi / r);
 
-			if (!add_forces) continue;
-
                 	vec this_pair_deriv = ra_to_la; this_pair_deriv *= this_pair_e_dor.second;
 			if (ligand_aliphatic){
                 		//this->minus_forces[carbon_index] += this_pair_deriv;
@@ -2052,18 +2048,14 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 
 	}
 
-	if (h_centroid_dist.empty()) return pr(0,0);
+	if (h_centroid_dist.empty()) return;
 
-	sz closest_h_i = 0; fl min_hc_dist = max_fl;
-	for (std::map<sz, fl>::iterator mapit = h_centroid_dist.begin(); mapit != h_centroid_dist.end(); mapit++){
-		sz h_i = mapit->first;
-		fl hc_dist = mapit->second;
-
-		if (hc_dist < min_hc_dist){
-			min_hc_dist = hc_dist;
-			closest_h_i = h_i;
-		}
-	}
+	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
+	//std::cout << "Ip hs size: " << ip_hs.size() << " num h neighbors " << c.num_h_neighbors << std::endl;
+	//fl scaling_factor = 1;
+	//fl scaling_factor = (fast) ? 1 : this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
+	fl scaling_factor = this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
+	//std::cout << "Scaling factor: " << scaling_factor << std::endl;
 	vec* h_closest = h_coords[closest_h_i];
 	sz h_closest_index = h_neighbor_indices[closest_h_i];
 
@@ -2090,15 +2082,16 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 
 		fl e = eval_chpi_enthalpy_h(r); fl deriv = (chpi_miu_h - r) * inv_ssqr * e;
                 fl e2 = eval_chpi_enthalpy_h2(r); fl deriv2 = (chpi_miu_h2 -r) * inv_ssqr2 * e2;
-		fl e_total = e + e2; fl deriv_total = deriv + deriv2;
+		fl e_total = scaling_factor * (e + e2);
+		fl deriv_total = scaling_factor * (deriv + deriv2);
                 this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
 		//fl dor = (r > 1) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
+		//fl dor = this->weight_chpi * this_pair_e_dor.second / r;
 		fl dor = this->weight_chpi * this_pair_e_dor.second;
 		dH += e_total;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
 
-		if (!add_forces) continue;
 		if (ligand_aliphatic){
 			this->minus_forces[h_closest_index] += this_pair_deriv;
 		}
@@ -2108,16 +2101,85 @@ pr model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr&
 		}
 	}
 
-        //dH_minusTdS.first += dH;
-	return pr(dH, 0); //No entropy until I get at least 33% in performance
+        dH_minusTdS.first += dH;
+	return; //No entropy until I get at least 33% in performance
 
 	//this->eval_chpi_entropy_set_force2(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	//this->eval_chpi_entropy_set_force(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
-	fl TdS = this->eval_chpi_entropy_set_force_old(h_closest, h_closest_index, r, dH_minusTdS, ligand_aliphatic, add_forces);
-	return pr(dH, TdS);
+	this->eval_chpi_entropy_set_force_old(h_closest, h_closest_index, r, dH_minusTdS, ligand_aliphatic);
+	return;
 }
 
-pr model::eval_chpi(bool fast, bool is_non_cache){
+fl model::get_chpi_scaling_factor(sz num_h_neighbors, sz num_ip_h){
+	VINA_CHECK(num_ip_h <= num_h_neighbors);
+	if (num_h_neighbors == 0) return 0; //Shouldn't happen
+	if (num_h_neighbors == 1){
+		if (num_ip_h == 0) return 0.008;
+		if (num_ip_h == 1) return 1.000;
+	}
+	else if (num_h_neighbors == 2){
+		if (num_ip_h == 0) return 0.009;
+		if (num_ip_h == 1) return 1.000;
+		if (num_ip_h == 2) return 0.120;
+	}
+	else if (num_h_neighbors == 3){
+		if (num_ip_h == 0) return 0.006;
+		if (num_ip_h == 1) return 1.000;
+		else if (num_ip_h == 2) return 0.201;
+		else if (num_ip_h == 3) return 0.007; //Necessary?
+	}
+	else if (num_h_neighbors == 4){
+		return 1; //Shouldn't happen, unless it's methane, only good for score-in-place.
+	}
+	VINA_CHECK(false);
+	return 0; //Shouldn't happen, just to make g++ happy. 
+}
+
+/*fl model::get_chpi_scaling_factor(sz num_h_neighbors, sz num_ip_h){
+        VINA_CHECK(num_ip_h <= num_h_neighbors);
+        if (num_h_neighbors == 0) return 0; //Shouldn't happen
+        if (num_h_neighbors == 1){
+                if (num_ip_h == 0) return 0.000;
+                if (num_ip_h == 1) return 1.000;
+        }
+        else if (num_h_neighbors == 2){
+                if (num_ip_h == 0) return 0.000;
+                if (num_ip_h == 1) return 1.000;
+                if (num_ip_h == 2) return 0.000;
+        }
+        else if (num_h_neighbors == 3){
+                if (num_ip_h == 0) return 0.000;
+                if (num_ip_h == 1) return 1.000;
+                else if (num_ip_h == 2) return 0.000;
+                else if (num_ip_h == 3) return 0.000; //Necessary?
+        }
+        else if (num_h_neighbors == 4){
+                return 1; //Shouldn't happen, unless it's methane, only good for score-in-place.
+        }
+        VINA_CHECK(false);
+        return 0; //Shouldn't happen, just to make g++ happy. 
+}*/
+
+int model::choose_interacting_h(std::map<sz, fl>& h_centroid_dist, szv& ip_hs){
+	bool no_ip_h = ip_hs.empty();
+	int closest_h_i = -1; fl min_hc_dist = max_fl;
+        for (std::map<sz, fl>::iterator mapit = h_centroid_dist.begin(); mapit != h_centroid_dist.end(); mapit++){
+                sz h_i = mapit->first;
+                fl hc_dist = mapit->second;
+
+		if (!no_ip_h){
+			if (!has(ip_hs, h_i)) continue; //Temporary
+		}
+                if (hc_dist < min_hc_dist){
+                        min_hc_dist = hc_dist;
+                        closest_h_i = h_i;
+                }
+        }
+	VINA_CHECK(closest_h_i != -1);
+	return closest_h_i;
+}
+
+pr model::eval_chpi(bool score_in_place){
 
 	pr dH_minusTdS(0.00, 0.00);
 	VINA_FOR(i, this->num_l_aro_rings){
@@ -2126,21 +2188,20 @@ pr model::eval_chpi(bool fast, bool is_non_cache){
 	}
 
 	if (this->chpi_explicit_hydrogen){
-		this->eval_chpi_h(dH_minusTdS, fast, is_non_cache);
+		this->eval_chpi_h(dH_minusTdS, score_in_place);
 	}
 	else{
-		this->eval_chpi_c(dH_minusTdS, fast, is_non_cache);
+		this->eval_chpi_c(dH_minusTdS, score_in_place);
 	}
 
 	return dH_minusTdS;
 }
 
-void model::eval_chpi_c(pr& dH_minusTdS, bool fast, bool is_non_cache){
+void model::eval_chpi_c(pr& dH_minusTdS, bool score_in_place){
 	VINA_FOR(i, this->num_l_aro_rings){
 		ring_attribute& r_inf = this->lig_ar_ring_info[i];
 		VINA_FOR(j, this->num_r_ali_carbs){
-			//lig_rec_chpi += eval_chpi_c_ring(this->rec_ali_carb_info[j], r_inf, false, dH_minusTdS);
-			this->eval_chpi_c_ring(this->rec_ali_carb_info[j], r_inf, dH_minusTdS, fast, is_non_cache);
+			this->eval_chpi_c_ring(this->rec_ali_carb_info[j], r_inf, dH_minusTdS, score_in_place);
 		}
 		//Later put catpi, pipi, etc here. 
 	}
@@ -2149,83 +2210,32 @@ void model::eval_chpi_c(pr& dH_minusTdS, bool fast, bool is_non_cache){
 	VINA_FOR(i, this->num_r_aro_rings){
 		ring_attribute& r_inf = this->rec_ar_ring_info[i];
 		VINA_FOR(j, this->num_l_ali_carbs){
-                        //rec_lig_chpi += eval_chpi_c_ring(this->lig_ali_carb_info[j], r_inf, true, dH_minusTdS);
-                        this->eval_chpi_c_ring(this->lig_ali_carb_info[j], r_inf, dH_minusTdS, fast, is_non_cache);
+                        this->eval_chpi_c_ring(this->lig_ali_carb_info[j], r_inf, dH_minusTdS, score_in_place);
 		}
 	}
 
 	return;
-	//return (lig_rec_chpi + rec_lig_chpi);
 }
 
-void model::eval_chpi_h(pr& dH_minusTdS, bool fast, bool is_non_cache){
+void model::eval_chpi_h(pr& dH_minusTdS, bool score_in_place){
 	sz num_rings_to_save = 1;
 
         VINA_FOR(i, this->num_r_ali_carbs){
 		aliphatic_carbon_attribute& c_attr = this->rec_ali_carb_info[i];
-		//std::map<fl, sz> ring_energies;
 
         	VINA_FOR(j, this->num_l_aro_rings){
                 	ring_attribute& r_inf = this->lig_ar_ring_info[j];
-                        pr this_ring_dH_TdS = this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, fast, is_non_cache, true);
-			dH_minusTdS.first += this_ring_dH_TdS.first;
-                        dH_minusTdS.second += this_ring_dH_TdS.second;
-			//fl total_e = this_ring_dH_TdS.first - this_ring_dH_TdS.second;
-			//ring_energies.insert(std::pair<fl, sz>(total_e, j));
-			//ring_energies[total_e] = j;
+                        this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, score_in_place);
                 }
-		
-		/*sz num_rings_counted = 0;
-		//std::cout << "Num l aro rings " << this->num_l_aro_rings << " and actual vecotr size: " << this->lig_ar_ring_info.size() << std::endl;
-		for (std::map<fl, sz>::reverse_iterator rit = ring_energies.rbegin(); rit != ring_energies.rend(); rit++){
-			if (num_rings_counted >= num_rings_to_save) break;
-			sz ring_index = rit->second;
-			//std::cout << "Ring index is: " << ring_index << std::endl;
-			fl e = rit->first;
-			if (std::abs(e) > epsilon_fl){
-				std::cout << "Map 1 e,sz: " << rit->first << "," << rit->second << std::endl;
-			}
-			ring_attribute& r_inf = this->lig_ar_ring_info[ring_index];
-			pr this_ring_dH_TdS = this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, fast, is_non_cache, true);
-			dH_minusTdS.first += this_ring_dH_TdS.first;
-			dH_minusTdS.second += this_ring_dH_TdS.second;
-			num_rings_counted++;
-		}*/
-		//std::cout << "Done this carbon" << std::endl;
         }
-	//std::cout << "Done rec ali carbs" << std::endl;
 
-        //fl rec_lig_chpi = 0.00;
         VINA_FOR(i, this->num_l_ali_carbs){
 		aliphatic_carbon_attribute& c_attr = this->lig_ali_carb_info[i];
-		std::map<fl, sz> ring_energies;
-
                 VINA_FOR(j, this->num_r_aro_rings){
                 	ring_attribute& r_inf = this->rec_ar_ring_info[j];
-                        pr this_ring_dH_TdS = this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, fast, is_non_cache, true);
-			dH_minusTdS.first += this_ring_dH_TdS.first;
-                        dH_minusTdS.second += this_ring_dH_TdS.second;
-			//fl total_e = this_ring_dH_TdS.first - this_ring_dH_TdS.second;
-			//ring_energies[total_e] = j;
+                        this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, score_in_place);
                 }
-
-		/*sz num_rings_counted = 0;
-                for (std::map<fl, sz>::reverse_iterator rit = ring_energies.rbegin(); rit != ring_energies.rend(); rit++){
-                        if (num_rings_counted >= num_rings_to_save) break;
-                        sz ring_index = rit->second;
-			fl e = rit->first;
-			if (std::abs(e) > epsilon_fl){
-				std::cout << "Map 2 e,sz: " << rit->first << "," << rit->second << std::endl;
-			}
-                        ring_attribute& r_inf = this->rec_ar_ring_info[ring_index];
-                        pr this_ring_dH_TdS = this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, fast, is_non_cache, true);
-                        dH_minusTdS.first += this_ring_dH_TdS.first;
-                        dH_minusTdS.second += this_ring_dH_TdS.second;
-                        num_rings_counted++;
-                }*/
-		//std::cout << "Done this carbon" << std::endl;
         }
-	//std::cout << "Done lig ali carbs" << std::endl;
 	//std::exit(1);
 
 	return;
@@ -2891,9 +2901,9 @@ void model::eval_chpi_entropy_set_force2(vec* h, sz closest_h_i, sz h_closest_in
 	
 }
 
-fl model::eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic, bool add_forces){
-	return this->eval_chpi_entropy_set_force_old_each_centroid(h_closest, h_closest_index, r, r.centroid, dH_minusTdS, ligand_aliphatic, add_forces);
-	//return;
+void model::eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic){
+	this->eval_chpi_entropy_set_force_old_each_centroid(h_closest, h_closest_index, r, r.centroid, dH_minusTdS, ligand_aliphatic);
+	return;
 
 	/*vecv& subcycle_centroids = r.subcycle_centroids;
 	if (!subcycle_centroids.empty()){
@@ -2907,7 +2917,7 @@ fl model::eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ri
 	return;*/
 }
 
-fl model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_closest_index, ring_attribute& r, vec& centroid, pr& dH_minusTdS, bool ligand_aliphatic, bool add_forces){
+void model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_closest_index, ring_attribute& r, vec& centroid, pr& dH_minusTdS, bool ligand_aliphatic){
 	szv& ring_atom_indices = r.all_atom_indices;
         vptrv& ring_atom_coords = r.all_atom_coord_ptrs;
         sz ring_size = r.num_ring_atoms;
@@ -2922,7 +2932,7 @@ fl model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_clo
 	//std::cout << "Hcho closest: " << hcho_closest << std::endl;
 
 	bool entropy_in_cutoff = (hcvo_closest < chpi_vo_max_h && hcho_closest < chpi_ho_max);
-	if (!entropy_in_cutoff) return 0;
+	if (!entropy_in_cutoff) return;
 
 	
 	vec vertical(r.normal);
@@ -2939,16 +2949,13 @@ fl model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_clo
 
 	//std::cout << "Entopy vertical offset " << hcvo_closest << " and factor: " << vertical_factor << std::endl;
 	
-        //dH_minusTdS.second += minusTdS;
-
+        dH_minusTdS.second += minusTdS;
         vec entropy_deriv = horizontal; entropy_deriv *= entropy_dor;
 
 	if (ligand_aliphatic){
-		if (add_forces){
-         		//this->minus_forces[carbon_index] += entropy_deriv;
-         		this->minus_forces[h_closest_index] += entropy_deriv;
-		}
-		return minusTdS;
+         	//this->minus_forces[carbon_index] += entropy_deriv;
+         	this->minus_forces[h_closest_index] += entropy_deriv;
+		return;
 	}
 	
 	/*szv& ring_atom_indices = r.all_atom_indices;
@@ -2981,19 +2988,17 @@ fl model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_clo
 	}*/
 	
 
-	if (add_forces){
-		//Method 2: Move the entire aromatic ring horizontally, just like what I do for the aliphatic carbon. Is it effective?
-        	entropy_deriv *= -1; //Reverse the direction of derivative so that it is still receptor->ligand
-		vec entropy_deriv_per_ring_atom = entropy_deriv;
-        	entropy_deriv_per_ring_atom /= (fl) r.num_ring_atoms;
+	//Method 2: Move the entire aromatic ring horizontally, just like what I do for the aliphatic carbon. Is it effective?
+       	entropy_deriv *= -1; //Reverse the direction of derivative so that it is still receptor->ligand
+	vec entropy_deriv_per_ring_atom = entropy_deriv;
+       	entropy_deriv_per_ring_atom /= (fl) r.num_ring_atoms;
 
-        	VINA_FOR(i, r.num_ring_atoms){
-                	sz ra_index = ring_atom_indices[i];
-                	//Apply total entropy evenly on each ring atom
-                	this->minus_forces[ra_index] += entropy_deriv_per_ring_atom;
-        	}
-	}
-	return minusTdS;
+       	VINA_FOR(i, r.num_ring_atoms){
+               	sz ra_index = ring_atom_indices[i];
+               	//Apply total entropy evenly on each ring atom
+               	this->minus_forces[ra_index] += entropy_deriv_per_ring_atom;
+       	}
+	return;
 
 }
 
