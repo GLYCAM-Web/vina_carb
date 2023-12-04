@@ -1073,8 +1073,8 @@ void parse_pdbqt_root_aux(std::istream& in, unsigned& count, parsing_struct& p, 
 		else if(starts_with(str, "ATOM  ") || starts_with(str, "HETATM")) {
 			try {
 				if(hetatm==1){
-				parsed_atom LIGpa=parse_pdbqt_atom_string(str);//AKN
-				ligand_info.push_back(LIGpa); 
+					parsed_atom LIGpa=parse_pdbqt_atom_string(str);//AKN
+					ligand_info.push_back(LIGpa); 
 				}
 				p.add(parse_pdbqt_atom_string(str), c);
 			}
@@ -1160,10 +1160,30 @@ void parse_pdbqt_aux(std::istream& in, unsigned& count, parsing_struct& p, conte
 	int branch=0, i=0;
 	VINA_FOR(i,ligand_info.size())	
 	{//This loop helps to remove blank spaces from atomnames in case they have them so the actual names can be used for comparison instead of with trailing blank spaces.
-		if(ligand_info[i].atomname.find(" ")<3)
-		{
-		ligand_info[i].atomname.replace(ligand_info[i].atomname.find(" "),1,"\0");
+		std::string& atom_name = ligand_info[i].atomname;
+		std::string& res_name  = ligand_info[i].resname;
+		std::string& res_num   = ligand_info[i].resnum;
+		std::string& chain_ID  = ligand_info[i].chainID;
+		
+		if (atom_name.find(" ") != std::string::npos){
+			atom_name.erase(std::remove_if(atom_name.begin(), atom_name.end(), isspace), atom_name.end());
 		}
+		if (res_name.find(" ") != std::string::npos){
+			res_name.erase(std::remove_if(res_name.begin(), res_name.end(), isspace), res_name.end());
+		}
+		if (res_num.find(" ") != std::string::npos){
+			res_num.erase(std::remove_if(res_num.begin(), res_num.end(), isspace), res_num.end());
+		}
+		if (chain_ID.find(" ") != std::string::npos){
+			chain_ID.erase(std::remove_if(chain_ID.begin(), chain_ID.end(), isspace), chain_ID.end());
+		}
+		/* Yao 20231202: The below doesn't actually remove the spaces, but before my changes atom names didn't contain spaces, so the code always functioned well. But after my modification, it doesn't work any more.
+ 		if(ligand_info[i].atomname.find(" ")<3)
+		{
+		std::cout << "Space in atom name:" << ligand_info[i].atomname << "@" << std::endl;
+		ligand_info[i].atomname.replace(ligand_info[i].atomname.find(" "),1,"\0");
+		std::cout << "After replace atom name:" << ligand_info[i].atomname << "@" << std::endl;
+		}*/
 	}
 	VINA_FOR(h,branch_atom1.size())
 	{
@@ -1206,7 +1226,8 @@ void parse_pdbqt_aux(std::istream& in, unsigned& count, parsing_struct& p, conte
         sizet_ring2_conf=(size_t*)calloc(1,sizeof(size_t));
 	S1_AB[0]=-1;
 	S2_6AE[0]=-1;
-        if((ligand_info[branch_atom1[h]-1].resnum!=ligand_info[branch_atom2[h]-1].resnum) && (ligand_info[branch_atom1[h]-1].resname.compare("OME")!=0 && ligand_info[branch_atom1[h]-1].resname.compare("ROH")!=0 ) && (ligand_info[branch_atom2[h]-1].resname.compare("OME")!=0 && ligand_info[branch_atom2[h]-1].resname.compare("ROH")!=0 )  )
+
+        if((ligand_info[branch_atom1[h]-1].resnum!=ligand_info[branch_atom2[h]-1].resnum) && (ligand_info[branch_atom1[h]-1].resname.compare("OME")!=0 && ligand_info[branch_atom1[h]-1].resname.compare("ROH")!=0 ) && (ligand_info[branch_atom2[h]-1].resname.compare("OME")!=0 && ligand_info[branch_atom2[h]-1].resname.compare("ROH")!=0 ) && (ligand_info[branch_atom1[h]-1].atomname[0]=='C' || ligand_info[branch_atom1[h]-1].atomname[0]=='O') && (ligand_info[branch_atom2[h]-1].atomname[0]=='C' || ligand_info[branch_atom2[h]-1].atomname[0]=='O') )
 	{//found glycosidic
 	VINA_FOR(i,2)
 		{//using 2 values for i, one for branch_atom1 and another for branch_atom2
@@ -1690,7 +1711,7 @@ void parse_pdbqt_branch(std::istream& in, unsigned& count, parsing_struct& p, co
 				parsed_atom a = parse_pdbqt_atom_string(str);
 				
 				if(hetatm==1){
-				ligand_info.push_back(a);
+					ligand_info.push_back(a);
 				}
 				if(a.number == to){
 					p.immobile_atom = p.atoms.size();

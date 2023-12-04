@@ -216,11 +216,13 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 
 		//Yao added 20230618
 		//e2 += chpi_dG;
-		VINA_FOR_IN(i, term_values)
+		VINA_FOR_IN(i, term_values){
 			e2 += term_values[i] * weights[i];
+		}
 
 
 		e2 = sf.conf_independent(m, e2);
+		e2 += vce; //Yao added 20231202
 		if(e < 100 && std::abs(e2 - e) > 0.05) {
 			log << "WARNING: the individual terms are inconsisent with the\n";
 			log << "WARNING: affinity. Consider reporting this as a bug:\n";
