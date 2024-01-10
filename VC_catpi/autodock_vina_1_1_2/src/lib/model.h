@@ -134,6 +134,32 @@ struct ring_attribute {
 			
 		}
 
+		this->subcycle_coords.clear(); //Index internal to this ring attribute object, not to the model. 
+                VINA_FOR_IN(i, this->subcycles){
+                        aptrv& this_cycle = this->subcycles[i];
+			vptrv this_cycle_coords;
+
+                        VINA_FOR_IN(j, this_cycle){
+                                atom_vc* cycle_atom = this_cycle[j];
+                                aptrv::iterator it = std::find(this->all_atom_ptrs.begin(), this->all_atom_ptrs.end(), cycle_atom);
+				VINA_CHECK(it != this->all_atom_ptrs.end());
+
+                                sz internal_index = std::distance(this->all_atom_ptrs.begin(), it);
+				this_cycle_coords.push_back(this->all_atom_coord_ptrs[internal_index]);
+				
+                        }
+
+			this->subcycle_coords.push_back(this_cycle_coords);
+                }
+
+		/*std::cout << "Num subcycle coords: " << this->subcycle_coords.size() << std::endl;
+
+		//if (this->all_atom_ptrs[0]->resname.find("TRP") != std::string::npos){
+			VINA_FOR_IN(i,this->subcycle_coords){
+				std::cout << "Subcycle coords size: " << this->subcycle_coords[i].size() << std::endl;
+			}
+		//}*/
+
 		this->num_ring_atoms = this->all_atom_ptrs.size();
 		this->num_aromatic_carbons = this->aromatic_carbon_ptrs.size();
 		this->num_heteroatoms = this->heteroatom_ptrs.size();
@@ -216,27 +242,22 @@ struct ring_attribute {
                 avg_x /= num_ring_atoms_fl; avg_y /= num_ring_atoms_fl; avg_z /= num_ring_atoms_fl;
                	this->centroid.data[0] = avg_x; this->centroid.data[1] = avg_y; this->centroid.data[2] = avg_z;
 	
-		/*VINA_FOR_IN(i, this->subcycles){
-			aptrv& this_cycle = this->subcycles[i];
+		VINA_FOR_IN(i, this->subcycle_coords){
+			vptrv& this_cycle_coords = this->subcycle_coords[i];
 			fl avg_x = 0, avg_y = 0, avg_z = 0;
 
-			VINA_FOR_IN(j, this_cycle){
-				atom_vc* this_atom = this_cycle[j];
-				sz internal_index = std::distance(this->all_atom_ptrs.begin(), std::find(this->all_atom_ptrs.begin(), this->all_atom_ptrs.end(), this_atom));
-				VINA_CHECK(internal_index < this->all_atom_ptrs.size());
-
-				sz& this_atom_index =this->all_atom_indices[internal_index];
-				vec* coord =  (use_adjusted_coords) ? (*this->adjusted_coords)[this_atom_index] : this->all_atom_coord_ptrs[internal_index];
+			VINA_FOR_IN(j, this_cycle_coords){
+				vec* coord = this_cycle_coords[j];
 				fl& x = coord->data[0]; fl& y = coord->data[1]; fl& z = coord->data[2];
 				avg_x += x; avg_y += y; avg_z += z;
 			}
 
-			fl num_cycle_atoms = (fl) this_cycle.size();
+			fl num_cycle_atoms = (fl) this_cycle_coords.size();
 			avg_x /= num_cycle_atoms; avg_y /= num_cycle_atoms; avg_z /= num_cycle_atoms;
 			vec& this_centroid = this->subcycle_centroids[i];
 
 			this_centroid[0] = avg_x; this_centroid[1] = avg_y; this_centroid[2] = avg_z;
-		}*/
+		}
 		return;
 	}
 
@@ -318,6 +339,7 @@ struct ring_attribute {
 	model* m;
 
 	std::vector<aptrv> subcycles;
+	std::vector<vptrv> subcycle_coords;
 	vecv subcycle_centroids;
 };
 typedef std::vector<ring_attribute> ring_info;
@@ -552,6 +574,8 @@ struct model {
 
 	void eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic);
 	void eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_closest_index, ring_attribute& r, vec& centroid, pr& dH_minusTdS, bool ligand_aliphatic);
+	vec* choose_closest_centroid(vec* h, vec& centroid, vecv& centroids);
+	pr calc_horizontal_factor(fl rh);
 
 	//Yao added 20230602
         //Could contain multiple ligands. Each vector of aptrv is all the aromatic rings of that ligand.

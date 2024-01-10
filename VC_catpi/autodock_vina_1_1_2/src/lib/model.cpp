@@ -1144,7 +1144,8 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
 	pr dH_minusTdS = this->eval_chpi(false);
-	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
+	//e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
+	e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second; 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1214,7 +1215,8 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 
 	pr dH_minusTdS = this->eval_chpi(score_in_place);
         //Add both enthalpy and entropy to e.
-        e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
+        //e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
+        e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second;
 	return sf.conf_independent(*this, e - intramolecular_energy);
 }
 
@@ -1401,6 +1403,7 @@ void model::build_ar_ring_info() {
 
 	this->lig_ar_ring_info.clear();
 	DetectAromaticCycles(this->ligand_residues, this->lig_ar_ring_info, true);
+
 
 	VINA_FOR_IN(i, this->lig_ar_ring_info){
 		std::cout << "\nLigand aromatic ring " << i+1  << ":";
@@ -1795,10 +1798,13 @@ std::vector<std::pair<aptrv, std::vector<aptrv> > > model::DetectAromaticCycles(
 		}
 		
 		/*std::string resname = this_cycle[0]->resname;
+		if (resname.find("TRP") != std::string::npos){
 		std::cout << "This " << resname << " cycle contains " << this_cycle.size() << " atoms " << " divided into " << subcycles.size() << " subcycles." << std::endl;
 		VINA_FOR_IN(j, subcycles){
 			std::cout << "This subcycle contains " << subcycles[j].size() <<  " atoms." << std::endl;
+		}
 		}*/
+		
 		cycle_subcycles.push_back(std::make_pair(this_cycle, subcycles));
 	}
 
@@ -1815,7 +1821,11 @@ fl model::eval_chpi_entropy(fl horizontal_offset){
 	if (horizontal_offset >= chpi_ho_max) return 0;
 	fl ho_effective = std::max(horizontal_offset, chpi_ho_epsilon);
 	//-TdS = -0.616*ln(horizontal_offset) + 0.2144 (0 ≤ r ≤ 1.4, R^2 = 0.998). Unit is kcal/mol, using S=-kb*p*ln(p) based on PDB data.
-	return (-0.616 * std::log(ho_effective) + 0.2144);  
+	//return (-0.616 * std::log(ho_effective) + 0.2144);  1.4A
+	//return (-0.603 * std::log(ho_effective) + 0.7505);  3.5A
+	//return (-0.605 * std::log(ho_effective) + 0.6564);  //3A
+	//return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
+	return (-0.613 * std::log(ho_effective) + 0.2108);  //1.4A, using intra-protein interactions. 
 }
 
 void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool score_in_place){
@@ -1944,6 +1954,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 
 	std::map<sz, fl> h_centroid_dist;
 	szv ip_hs;
+	std::vector<flv> h_ring_dists(c.num_h_neighbors, flv(r.num_ring_atoms, max_fl));
 
 	VINA_FOR(i, c.num_h_neighbors){
                 sz h_index = h_neighbor_indices[i];
@@ -1986,6 +1997,8 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			//vec c_ra_to_la = (ligand_aliphatic) ? *c_coord - *rc : *rc - *c_coord; //Use C-ring instead?
 
 			fl r = magnitude(ra_to_la);
+			h_ring_dists[i][j] = 1 / sqr(r);
+
 			if (r >= chpi_hcut) continue;
 
 			if (h_centroid_dist.find(i) == h_centroid_dist.end()){
@@ -2012,12 +2025,12 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			}*/
 
 			//fl rep_distance = r - 3.0;
-			fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
+			/*fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
                 	if (rep_distance < 0){
 				fl repulsion_e = sqr(rep_distance); fl repulsion_deriv = 2.0 * rep_distance;
                         	this_pair_e_dor.first -= repulsion_e; this_pair_e_dor.second -= repulsion_deriv;
                         	dH -= repulsion_e;
-                	}
+                	}*/
 			//pr e_dor = (fast) ? this->eval_chpi_enthalpy_h_fast(r, chn_cosine) : this->eval_chpi_enthalpy_h_deriv(r, chn_cosine);
 			//pr e_dor = (fast) ? this->eval_chpi_enthalpy_h_fast(r, chn_cosine_abs) : this->eval_chpi_enthalpy_h_deriv(r, chn_cosine_abs);
 
@@ -2032,7 +2045,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			this_pair_e_dor.first += h_ar_dH; this_pair_e_dor.second += h_ar_dor;*/
 			//std::cout << "R: " << r << " affinity: " << this_pair_e_dor.first << std::endl;
 
-			this_pair_e_dor.second *= (this->weight_chpi / r);
+			/*this_pair_e_dor.second *= (this->weight_chpi / r);
 
                 	vec this_pair_deriv = ra_to_la; this_pair_deriv *= this_pair_e_dor.second;
 			if (ligand_aliphatic){
@@ -2042,7 +2055,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			else{
 				//this->minus_forces[ar_atom_index] += this_pair_deriv;
 				this->minus_forces[ring_atom_index] += this_pair_deriv;
-                	}
+                	}*/
 
         	}
 
@@ -2051,13 +2064,28 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	if (h_centroid_dist.empty()) return;
 
 	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
+	flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
+	fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
+
 	//std::cout << "Ip hs size: " << ip_hs.size() << " num h neighbors " << c.num_h_neighbors << std::endl;
 	//fl scaling_factor = 1;
 	//fl scaling_factor = (fast) ? 1 : this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
-	fl scaling_factor = this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
+	//fl scaling_factor = this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
 	//std::cout << "Scaling factor: " << scaling_factor << std::endl;
 	vec* h_closest = h_coords[closest_h_i];
+	vec* closest_centroid = this->choose_closest_centroid(h_closest, centroid, r.subcycle_centroids);
 	sz h_closest_index = h_neighbor_indices[closest_h_i];
+
+	vec hcc = *h_closest - *closest_centroid;
+	fl hcc_dp = hcc * normal;
+        fl hcc_vo = std::abs(hcc_dp); //H-centroid vertical offset
+	fl hcc_ho = std::sqrt(sqr(magnitude(hcc))-sqr(hcc_vo));
+
+	//if (hcc_ho >= chpi_ho_end) return;
+
+	//pr hf_val_deriv = this->calc_horizontal_factor(hcc_ho);
+	//fl& f = hf_val_deriv.first; 
+	//fl& fd = hf_val_deriv.second;
 
 	//VINA_FOR(j, r.num_aromatic_carbons){
 		//vec* rc = ar_coord_ptrs[j];
@@ -2071,25 +2099,33 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
                 if (r >= chpi_hcut) continue;
 		pr this_pair_e_dor(0,0);
 			
-		/*fl rep_distance = r - 3.0;
+		fl inv_dist_sqr = closest_h_ring_dists[j];
+		fl wt = inv_dist_sqr / inv_dist_sqr_sum;
+
+		fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
                 if (rep_distance < 0){
-                        //fl repulsion_e = sqr(rep_distance); fl repulsion_deriv = 2.0 * rep_distance;
-			fl d = -rep_distance;
-                        fl repulsion_e = chpi_rc * std::pow(d, chpi_p); fl repulsion_deriv = -chpi_rc * chpi_p * std::pow(d, chpi_p -1);
+                        fl repulsion_e = sqr(rep_distance); fl repulsion_deriv = 2.0 * rep_distance;
                         this_pair_e_dor.first -= repulsion_e; this_pair_e_dor.second -= repulsion_deriv;
                         dH -= repulsion_e;
-                }*/
+                }
 
 		fl e = eval_chpi_enthalpy_h(r); fl deriv = (chpi_miu_h - r) * inv_ssqr * e;
                 fl e2 = eval_chpi_enthalpy_h2(r); fl deriv2 = (chpi_miu_h2 -r) * inv_ssqr2 * e2;
-		fl e_total = scaling_factor * (e + e2);
-		fl deriv_total = scaling_factor * (deriv + deriv2);
-                this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
+
+		fl e_total = e + e2;
+		fl e_deriv = deriv + deriv2;
+
+		fl ef = e_total;
+		//fl deriv_total = fd*e_total + f*e_deriv;
+		fl deriv_total = e_deriv;
+		//fl deriv_total = f*e_deriv;
+		//std::cout << "Factor: " << f << " E total: " << e_total << " Ef: " << ef << " and deriv total: " << deriv_total << std::endl;
+                this_pair_e_dor.first += ef; this_pair_e_dor.second += deriv_total;
 
 		//fl dor = (r > 1) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
-		//fl dor = this->weight_chpi * this_pair_e_dor.second / r;
-		fl dor = this->weight_chpi * this_pair_e_dor.second;
-		dH += e_total;
+		fl dor = this->weight_chpi * this_pair_e_dor.second / r;
+		//fl dor = this->weight_chpi * this_pair_e_dor.second;
+		dH += ef;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
 
 		if (ligand_aliphatic){
@@ -2102,7 +2138,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	}
 
         dH_minusTdS.first += dH;
-	return; //No entropy until I get at least 33% in performance
+	//return; //No entropy until I get at least 33% in performance
 
 	//this->eval_chpi_entropy_set_force2(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	//this->eval_chpi_entropy_set_force(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
@@ -2902,7 +2938,9 @@ void model::eval_chpi_entropy_set_force2(vec* h, sz closest_h_i, sz h_closest_in
 }
 
 void model::eval_chpi_entropy_set_force_old(vec* h_closest, sz h_closest_index, ring_attribute& r, pr& dH_minusTdS, bool ligand_aliphatic){
-	this->eval_chpi_entropy_set_force_old_each_centroid(h_closest, h_closest_index, r, r.centroid, dH_minusTdS, ligand_aliphatic);
+	//vec* closest_centroid = this->choose_closest_centroid(h_closest, r.centroid, r.subcycle_centroids);
+	vec* closest_centroid = &(r.centroid);
+	this->eval_chpi_entropy_set_force_old_each_centroid(h_closest, h_closest_index, r, *closest_centroid, dH_minusTdS, ligand_aliphatic);
 	return;
 
 	/*vecv& subcycle_centroids = r.subcycle_centroids;
@@ -2944,8 +2982,13 @@ void model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_c
 	//pr entropy_e_dor = (fast) ? this->eval_chpi_entropy_fast(ccho) : this->eval_chpi_entropy_deriv(ccho);
 	//fl minusTdS = entropy_e_dor.first; fl entropy_dor = -this->weight_chpi * entropy_e_dor.second;
 	fl vertical_factor = slope_step(chpi_vo_max_h, chpi_vertical_optimum_h, hcvo_closest);
+	//fl vertical_factor = 1;
 	fl minusTdS = vertical_factor * eval_chpi_entropy(hcho_closest);
-	fl entropy_dor = vertical_factor * -this->weight_chpi * -0.616 / (hcho_closest * hcho_closest); 
+	//fl entropy_dor = vertical_factor * -this->weight_chpi * -0.616 / (hcho_closest * hcho_closest); 
+	//fl entropy_d = vertical_factor * -this->weight_chpi * -0.605 / hcho_closest;
+	//fl entropy_d = vertical_factor * -this->weight_chpi * -0.607 / hcho_closest;
+	fl entropy_d = vertical_factor * -0.613 / hcho_closest;
+	fl entropy_dor = entropy_d / hcho_closest; 
 
 	//std::cout << "Entopy vertical offset " << hcvo_closest << " and factor: " << vertical_factor << std::endl;
 	
@@ -3106,4 +3149,33 @@ void model::eval_chpi_entropy_set_force(vec* h, sz closest_h_i, sz h_closest_ind
 	}
 	return;
 	
+}
+
+vec* model::choose_closest_centroid(vec* h, vec& centroid, vecv& centroids){
+	if (centroids.empty()) return (&centroid);
+	flv distances(centroids.size(), 0);
+
+	VINA_FOR_IN(i, centroids){
+		vec& c = centroids[i];
+		vec hc = *h - c;
+		fl r = magnitude(hc);
+		distances[i] =  r;
+	}
+	
+	flv::iterator it = std::min_element(distances.begin(), distances.end());
+	int index = std::distance(distances.begin(), it);
+	return &(centroids[index]);
+}
+
+pr model::calc_horizontal_factor(fl rh){
+	if (rh <= chpi_ho_max) return pr(1,0);
+	else if (rh <= chpi_ho_end){
+		fl a1 = rh - chpi_ho_max;
+		fl a2 = chpi_ho_end - chpi_ho_max;
+
+		fl f = 1 - sqr(a1/a2);
+		fl deriv = -2.0 * a1 / sqr(a2);
+		return pr(f, deriv);
+	}
+	return pr(0,0);
 }
