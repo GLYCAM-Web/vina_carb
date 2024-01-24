@@ -470,14 +470,14 @@ const double chpi_vertical_optimum_h = 2.70;
 //const double chpi_rc = 0.12, chpi_ofs = -0.78, chpi_p = 4.00;
 
 //AD, closest hydrogen has attraction only, but all hydrogens have repulsion
-//const double chpi_miu_h = 3.02, chpi_sigma_h = 0.91, chpi_const_h = 0.45, chpi_miu_h2 = 5.14, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.014;
-//const double chpi_rc = 3.05, chpi_ofs = -0.05, chpi_p = 4.55;
+const double chpi_miu_h = 3.02, chpi_sigma_h = 0.91, chpi_const_h = 0.45, chpi_miu_h2 = 5.14, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.014;
+const double chpi_rc = 3.05, chpi_ofs = -0.05, chpi_p = 4.55;
 
 //A, fitted to A horizontal
 //const double chpi_miu_h = 3.02, chpi_sigma_h = 0.40, chpi_const_h = 0.20, chpi_miu_h2 = 4.40, chpi_sigma_h2 = 0.93, chpi_const_h2 = 0.79;
 
 //AD, isobutane, fitting without phobic
-const double chpi_miu_h = 2.67, chpi_sigma_h = 0.47, chpi_const_h = 0.44, chpi_miu_h2 = 4.86, chpi_sigma_h2 = 0.40, chpi_const_h2 = 0.11;
+//const double chpi_miu_h = 2.67, chpi_sigma_h = 0.47, chpi_const_h = 0.44, chpi_miu_h2 = 4.86, chpi_sigma_h2 = 0.40, chpi_const_h2 = 0.11;
 //AD, isobutane, fitting with  phobic
 //const double chpi_miu_h = 2.65, chpi_sigma_h = 0.44, chpi_const_h = 0.32, chpi_miu_h2 = 4.93, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.10;
 

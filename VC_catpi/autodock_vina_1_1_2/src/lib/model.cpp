@@ -1954,7 +1954,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 
 	std::map<sz, fl> h_centroid_dist;
 	szv ip_hs;
-	std::vector<flv> h_ring_dists(c.num_h_neighbors, flv(r.num_ring_atoms, max_fl));
+	//std::vector<flv> h_ring_dists(c.num_h_neighbors, flv(r.num_ring_atoms, max_fl));
 
 	VINA_FOR(i, c.num_h_neighbors){
                 sz h_index = h_neighbor_indices[i];
@@ -1997,7 +1997,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			//vec c_ra_to_la = (ligand_aliphatic) ? *c_coord - *rc : *rc - *c_coord; //Use C-ring instead?
 
 			fl r = magnitude(ra_to_la);
-			h_ring_dists[i][j] = 1 / sqr(r);
+			//h_ring_dists[i][j] = 1 / sqr(r);
 
 			if (r >= chpi_hcut) continue;
 
@@ -2064,8 +2064,8 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	if (h_centroid_dist.empty()) return;
 
 	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
-	flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
-	fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
+	//flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
+	//fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
 
 	//std::cout << "Ip hs size: " << ip_hs.size() << " num h neighbors " << c.num_h_neighbors << std::endl;
 	//fl scaling_factor = 1;
@@ -2099,8 +2099,8 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
                 if (r >= chpi_hcut) continue;
 		pr this_pair_e_dor(0,0);
 			
-		fl inv_dist_sqr = closest_h_ring_dists[j];
-		fl wt = inv_dist_sqr / inv_dist_sqr_sum;
+		//fl inv_dist_sqr = closest_h_ring_dists[j];
+		//fl wt = inv_dist_sqr / inv_dist_sqr_sum;
 
 		fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
                 if (rep_distance < 0){
@@ -2138,7 +2138,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	}
 
         dH_minusTdS.first += dH;
-	//return; //No entropy until I get at least 33% in performance
+	return; //No entropy until I get at least 33% in performance
 
 	//this->eval_chpi_entropy_set_force2(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	//this->eval_chpi_entropy_set_force(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
@@ -2424,7 +2424,7 @@ bool model::is_aromatic_cycle(aptrv& ring){
 }
 
 void model::DetectAliphaticCarbons(){
-	std::string flexible_residues = "ARG_LYS_GLU_GLN_MET";
+	//std::string flexible_residues = "ARG_LYS_GLU_GLN_MET";
 	this->rec_ali_carb_info.clear();
 	aptrv all_receptor_aromatic_carbons;
 	VINA_FOR_IN(i, this->rec_ar_ring_info){
@@ -2444,13 +2444,13 @@ void model::DetectAliphaticCarbons(){
 		std::string atomname = atom.atomname;
 		atomname.erase(std::remove_if(atomname.begin(), atomname.end(), isspace), atomname.end());
 
-		if (flexible_residues.find(resname) != std::string::npos){
+		/*if (flexible_residues.find(resname) != std::string::npos){
 			flexible = true;
 		}
 		//Skipping side chain carbon atoms of flexible residues (linear && >= 3 rotatable bonds)
 		if (flexible && atomname != "CA"){
 			continue; 
-		}
+		}*/
 		
 
 		//vec* c_coord = this->all_atom_coord_ptr_map[&atom];
