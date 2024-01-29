@@ -151,7 +151,11 @@ const atom_kind atom_kind_data[] = { // name, radius, depth, solvation parameter
 	{"Fe",    0.65000,    0.01000,   -0.00110,    1.84000,   1.25}, // 17
 	{"Cl",    2.04500,    0.27600,   -0.00110,   35.82350,   0.99}, // 18
 	{"Br",    2.16500,    0.38900,   -0.00110,   42.56610,   1.14}, // 19
-        {"NR",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 20 
+        {"NK",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 20 Amika20 Amika
+        {"NR",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 21 Amika20 Amika
+        {"ON",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}, // 22 Amika20 Amika
+        {"OS",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}, // 23 Amika20 Amika
+        {"SO",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}  // 24 Amika20 Amika
 };
 
 const fl metal_solvation_parameter = -0.00110;
@@ -316,6 +320,8 @@ inline bool xs_is_acceptor(sz xs) {
 	return xs == XS_TYPE_N_A ||
 		   xs == XS_TYPE_N_DA ||
 		   xs == XS_TYPE_O_A ||
+                   xs == XS_TYPE_O_N ||
+                   xs == XS_TYPE_O_S ||
 		   xs == XS_TYPE_O_DA;
 }
 
@@ -325,6 +331,7 @@ inline bool xs_is_donor(sz xs) {
 		   xs == XS_TYPE_N_DA ||
 		   xs == XS_TYPE_O_D ||
 		   xs == XS_TYPE_O_DA ||
+                   xs == XS_TYPE_N_K ||
 		   xs == XS_TYPE_Met_D;
 }
 
@@ -348,6 +355,8 @@ inline bool xs_donor_acceptor(sz t1, sz t2) {
 }
 
 inline bool xs_h_bond_possible(sz t1, sz t2) {
+	if (((xs_charged(t1)) && (xs_charged(t2))) || (t1==XS_TYPE_N_D && t2==XS_TYPE_O_S) || (t2==XS_TYPE_N_D && t1==XS_TYPE_O_S) )
+                {return false;}
 	return xs_donor_acceptor(t1, t2) || xs_donor_acceptor(t2, t1);
 }
 
