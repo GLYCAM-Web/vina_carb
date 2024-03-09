@@ -40,17 +40,6 @@ struct distance_additive : public term {
 	virtual ~distance_additive() {}
 };
 
-/*struct chpi_father_struct { //Direct copy from distance_additive above by Yao 20230531
-        fl cutoff_not_used;
-        chpi_father_struct() {}
-        //virtual fl eval(const atom_base& a, const atom_base& b, fl r) const = 0;
-        //virtual ~distance_additive() {}
-
-	//virtual fl eval(const atom_base& ali_c,  const atom_base& b) const = 0;
-	virtual ~chpi_father_struct(){}
-};*/
-
-//struct usable : public distance_additive, public chpi_father_struct {
 struct usable : public distance_additive {
 	atom_type::t atom_typing_used;
 	//usable(fl cutoff_) : distance_additive(cutoff_), chpi_father_struct(), atom_typing_used(atom_type::XS) {}

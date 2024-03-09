@@ -270,7 +270,9 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 				if(not_max(out_cont[i].e))
 					{
 					change g(m.get_size());
-					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy);
+					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c); //Yao added 20240309 according to VC_GAG
+					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra); //20240309 According to VC_GAG
+					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy);
 					out_cont[i].vce=m.eval_chi(chi_coeff,chi_cutoff);
 					out_cont[i].e+=out_cont[i].vce;
 					} 

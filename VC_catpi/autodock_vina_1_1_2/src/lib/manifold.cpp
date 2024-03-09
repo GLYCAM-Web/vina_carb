@@ -34,7 +34,7 @@
 const vec authentic_v(1000, 1000, 1000); // FIXME? this is here to avoid max_fl/max_fl
 
 output_type manifold::operator()(model& m, const precalculate& p, const igrid& ig, const precalculate& p_widened, const igrid& ig_widened, const vec& corner1, const vec& corner2, rng& generator) const {
-	std::cout << "Manifold operator () called" << std::endl;
+	//std::cout << "Manifold operator () called" << std::endl;
 	output_container tmp;
 	this->operator()(m, tmp, p, ig, p_widened, ig_widened, corner1, corner2, generator, chi_coeff, chi_cutoff); // call the version that produces the whole container
 	VINA_CHECK(!tmp.empty());
@@ -69,7 +69,7 @@ bool conf_is_legal(const conf& c, const output_container& mf, const std::vector<
 }
 
 conf generate_external(const conf& internal_conf, const output_container& mf, const std::vector<bool>& internal_too_close, bool uniq, const scale& spread, const scale& exclusion, fl rp, const conf* rs, unsigned num_attempts, bool& failed, rng& generator) {
-	std::cout << "Manifold generate external called." << std::endl;
+	//std::cout << "Manifold generate external called." << std::endl;
 	// FIXME if one ligand with no side chains, don't use the same (pos, orient) more than once 
 	failed = false;
 	VINA_U_FOR(attempt, num_attempts) {
@@ -99,7 +99,7 @@ vec extrapolate_cap(const vec& from, const vec& to, fl progress) {
 }
 
 void manifold_phase(sz phase, output_type& out, model& m, const output_container& mf, const precalculate& p, const igrid& ig, fl corner2corner, fl init_manifold_factor, recent_history& e_internal_stats, const manifold& par, rng& generator) { // out.first is starting conf on input
-	std::cout << "Manifold phase called." << std::endl;
+	//std::cout << "Manifold phase called." << std::endl;
 	out.e = max_fl; // FIXME ? back to above?
 
 	const fl rp = 1 - std::exp(std::log(1-par.max_prob) * phase/par.num_phases); // max_prob had better be < 1
@@ -155,7 +155,7 @@ void manifold_phase(sz phase, output_type& out, model& m, const output_container
 }
 
 void manifold::operator()(model& m, output_container& out, const precalculate& p, const igrid& ig, const precalculate& p_widened, const igrid& ig_widened, const vec& corner1, const vec& corner2, rng& generator, const fl chi_coeff, const fl chi_cutoff) const {
-	std::cout << "Manifold operator 2 called." << std::endl;
+	//std::cout << "Manifold operator 2 called." << std::endl;
 	manifold tuning_par;
 	tuning_par.hunt_cap = authentic_v;
 	fl tmpq;
