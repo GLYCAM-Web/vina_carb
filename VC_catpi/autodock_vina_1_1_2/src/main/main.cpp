@@ -260,7 +260,9 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 				if(not_max(out_cont[i].e))
 					{
 					change g(m.get_size());
-					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, false);
+					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c);
+          				out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, false);
+					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, false);
 					out_cont[i].vce=m.eval_chi(chi_coeff,chi_cutoff);
 					out_cont[i].e+=out_cont[i].vce;
 					} 

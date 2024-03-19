@@ -1144,8 +1144,8 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
 	pr dH_minusTdS = this->eval_chpi(false);
-	//e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
-	e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second; 
+	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
+	//e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second; 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1215,8 +1215,8 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 
 	pr dH_minusTdS = this->eval_chpi(score_in_place);
         //Add both enthalpy and entropy to e.
-        //e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
-        e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second;
+        e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
+        //e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second;
 	return sf.conf_independent(*this, e - intramolecular_energy);
 }
 
