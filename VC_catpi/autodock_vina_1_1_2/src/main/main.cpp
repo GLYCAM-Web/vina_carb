@@ -515,7 +515,7 @@ Thank you!\n";
 		fl weight_hydrogen    = -0.587439;
 		fl weight_rot         =  0.05846;
                 fl weight_catpi       = -0.40000; //
-                fl weight_chpi        = -0.30000;
+                fl weight_chpi        = -0.40000;
 		fl weight_qrepulsion  =  1.00000; //Amika
                 fl weight_qattraction1=  1.00000; //Amika
                 fl weight_hydrogen2   = -0.587439; //Amika
