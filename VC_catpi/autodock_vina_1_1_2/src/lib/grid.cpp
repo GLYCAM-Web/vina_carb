@@ -40,7 +40,6 @@ void grid::init(const grid_dims& gd) {
 
 fl grid::evaluate_aux(const vec& location, fl slope, fl v, vec* deriv) const { // sets *deriv if not NULL
 	//"Location is m.coords[i]. Yao 20231029
-	//elementwise_prodect(vec& a, vec& b) return vec(a[0]*b[0], a[1]*b[1], a[2]*b[2])
 	vec s  = elementwise_product(location - m_init, m_factor); 
 
 	vec miss(0, 0, 0);

@@ -36,9 +36,12 @@ const sz EL_TYPE_Cl   =  7;
 const sz EL_TYPE_Br   =  8;
 const sz EL_TYPE_I    =  9;
 const sz EL_TYPE_Met  = 10;
-const sz EL_TYPE_NR   = 11; 
-//const sz EL_TYPE_A    = 12; 
-const sz EL_TYPE_SIZE = 12; //const sz EL_TYPE_SIZE = 11;
+const sz EL_TYPE_NK   = 11; //Amika 
+const sz EL_TYPE_NR   = 12; //Amika
+const sz EL_TYPE_ON   = 13; //Amika
+const sz EL_TYPE_OS   = 14; //Amika
+const sz EL_TYPE_SO   = 15; //Amika 
+const sz EL_TYPE_SIZE = 16; //Amika const sz EL_TYPE_SIZE = 11;
 
 // AutoDock4
 const sz AD_TYPE_C    =  0;
@@ -61,8 +64,12 @@ const sz AD_TYPE_Ca   = 16;
 const sz AD_TYPE_Fe   = 17;
 const sz AD_TYPE_Cl   = 18;
 const sz AD_TYPE_Br   = 19;
-const sz AD_TYPE_NR   = 20; //
-const sz AD_TYPE_SIZE = 21; // const sz AD_TYPE_SIZE = 20;
+const sz AD_TYPE_NK   = 20; //Amika
+const sz AD_TYPE_NR   = 21; //Amika
+const sz AD_TYPE_ON   = 22; //Amika
+const sz AD_TYPE_OS   = 23; //Amika
+const sz AD_TYPE_SO   = 24; //Amika
+const sz AD_TYPE_SIZE = 25; //Amika const sz AD_TYPE_SIZE = 20;
 
 // X-Score
 const sz XS_TYPE_C_H   =  0;
@@ -82,10 +89,14 @@ const sz XS_TYPE_Cl_H  = 13;
 const sz XS_TYPE_Br_H  = 14;
 const sz XS_TYPE_I_H   = 15;
 const sz XS_TYPE_Met_D = 16;
-const sz XS_TYPE_N_R   = 17; 
-const sz XS_TYPE_C_A_P = 18; 
-const sz XS_TYPE_C_A_H = 19; 
-const sz XS_TYPE_SIZE  = 20; // const sz XS_TYPE_SIZE  = 17;
+const sz XS_TYPE_C_A_P = 17; //Yao
+const sz XS_TYPE_C_A_H = 18; //Yao
+const sz XS_TYPE_N_K   = 19; //Amika 
+const sz XS_TYPE_N_R   = 20; //Amika
+const sz XS_TYPE_O_N   = 21; //Amika
+const sz XS_TYPE_O_S   = 22; //Amika
+const sz XS_TYPE_S_O   = 23; //Amika
+const sz XS_TYPE_SIZE  = 24; //Amika const sz XS_TYPE_SIZE  = 17;
 
 // DrugScore-CSD
 const sz SY_TYPE_C_3   =  0;
@@ -140,7 +151,11 @@ const atom_kind atom_kind_data[] = { // name, radius, depth, solvation parameter
 	{"Fe",    0.65000,    0.01000,   -0.00110,    1.84000,   1.25}, // 17
 	{"Cl",    2.04500,    0.27600,   -0.00110,   35.82350,   0.99}, // 18
 	{"Br",    2.16500,    0.38900,   -0.00110,   42.56610,   1.14}, // 19
-        {"NR",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 20 
+        {"NK",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 20 Amika20 Amika
+        {"NR",    1.75000,    0.16000,   -0.00162,   22.44930,   0.75}, // 21 Amika20 Amika
+        {"ON",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}, // 22 Amika20 Amika
+        {"OS",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}, // 23 Amika20 Amika
+        {"SO",    1.60000,    0.20000,   -0.00251,   17.15730,   0.73}  // 24 Amika20 Amika
 };
 
 const fl metal_solvation_parameter = -0.00110;
@@ -207,7 +222,12 @@ inline sz ad_type_to_el_type(sz t) {
 		case AD_TYPE_Fe   : return EL_TYPE_Met;
 		case AD_TYPE_Cl   : return EL_TYPE_Cl;
 		case AD_TYPE_Br   : return EL_TYPE_Br;
-                case AD_TYPE_NR   : return EL_TYPE_NR; 
+
+		case AD_TYPE_NK   : return EL_TYPE_NK; //Amika
+                case AD_TYPE_NR   : return EL_TYPE_NR; //Amika
+                case AD_TYPE_ON   : return EL_TYPE_ON; //Amika
+                case AD_TYPE_OS   : return EL_TYPE_OS; //Amika
+        	case AD_TYPE_SO   : return EL_TYPE_SO; //Amika	
 		case AD_TYPE_SIZE : return EL_TYPE_SIZE;
 		default: VINA_CHECK(false);
 	}
@@ -232,11 +252,42 @@ const fl xs_vdw_radii[] = {
 	2.0, // Br_H
 	2.2, // I_H
 	1.2, // Met_D
-        1.8, // N_R   
         1.9, // C_A_P   
-        1.9 // C_A_H
+        1.9, // C_A_H
+	1.8, // N_K   //Amika
+        1.8, // N_R   //Amika
+        1.7, // O_N   //Amika 
+        1.7, // O_S   //Amika
+        1.7  //S_O    //Amika
 };
 
+const fl xs_charge[] = {
+        0.0, // C_H
+        0.0, // C_P
+        0.0, // N_P
+        0.0, // N_D
+        0.0, // N_A
+        0.0, // N_DA
+        0.0, // O_P
+        0.0, // O_D
+        0.0, // O_A
+        0.0, // O_DA
+        0.0, // S_P
+        0.0, // P_P
+        0.0, // F_H
+        0.0, // Cl_H
+        0.0, // Br_H
+        0.0, // I_H
+        0.0, // Met_D
+	0.0, //C_A_P
+	0.0, //C_A_H
+        1.0, // N_K   //Amika
+        0.33, // N_R   //Amika
+        -0.5, // O_N   //Amika
+        -0.33, // O_S   //Amika
+  	-0.5, //S_O    //Amika
+        0.0  // SIZE 
+};
 inline fl xs_radius(sz t) {
 	const sz n = sizeof(xs_vdw_radii) / sizeof(const fl);
 	assert(n == XS_TYPE_SIZE);
@@ -269,6 +320,8 @@ inline bool xs_is_acceptor(sz xs) {
 	return xs == XS_TYPE_N_A ||
 		   xs == XS_TYPE_N_DA ||
 		   xs == XS_TYPE_O_A ||
+                   xs == XS_TYPE_O_N ||
+                   xs == XS_TYPE_O_S ||
 		   xs == XS_TYPE_O_DA;
 }
 
@@ -278,15 +331,62 @@ inline bool xs_is_donor(sz xs) {
 		   xs == XS_TYPE_N_DA ||
 		   xs == XS_TYPE_O_D ||
 		   xs == XS_TYPE_O_DA ||
+                   xs == XS_TYPE_N_K ||
 		   xs == XS_TYPE_Met_D;
 }
 
+inline bool xs_positive(sz xs){
+        return xs == XS_TYPE_N_K ||
+               xs == XS_TYPE_N_R;
+}
+
+inline bool xs_negative(sz xs){
+        return xs == XS_TYPE_O_N ||
+           xs == XS_TYPE_S_O ||
+               xs == XS_TYPE_O_S;
+}
+
+inline bool xs_charged(sz xs){
+        return xs_positive(xs) ||
+               xs_negative(xs);
+}
 inline bool xs_donor_acceptor(sz t1, sz t2) {
 	return xs_is_donor(t1) && xs_is_acceptor(t2);
 }
 
 inline bool xs_h_bond_possible(sz t1, sz t2) {
+	if (((xs_charged(t1)) && (xs_charged(t2))) || (t1==XS_TYPE_N_D && t2==XS_TYPE_O_S) || (t2==XS_TYPE_N_D && t1==XS_TYPE_O_S) )
+                {return false;}
 	return xs_donor_acceptor(t1, t2) || xs_donor_acceptor(t2, t1);
+}
+
+inline bool xs_h_bond_possible2(sz t1, sz t2) {
+        if ( (t1==XS_TYPE_N_D && t2==XS_TYPE_O_S) || (t2==XS_TYPE_N_D && t1==XS_TYPE_O_S) ) {return true;}
+        else {return false;}
+}
+
+inline bool xs_q_repulsion(sz t1, sz t2){
+        return ((xs_positive(t1) && xs_positive(t2) ) || (xs_negative(t1) && xs_negative(t2)) );
+}
+
+inline bool xs_q_attraction(sz t1, sz t2){
+        return ((xs_positive(t1) && xs_negative(t2) ) || (xs_negative(t1) && xs_positive(t2)) );
+}
+
+inline fl xs_q_int(sz t1, sz t2, int i){
+//        if (i==1 && ((t1==XS_TYPE_N_K) || (t2==XS_TYPE_N_K)) && xs_q_attraction(t1, t2)){
+//           return ( xs_charge[t1]*xs_charge[t2] ); 
+//        }
+//        if (i==2 && ((t1==XS_TYPE_N_R) || (t2==XS_TYPE_N_R)) && xs_q_attraction(t1, t2)){
+//           return ( xs_charge[t1]*xs_charge[t2] );
+//        }
+	if (i==1 &&  xs_q_attraction(t1, t2)){
+           return ( xs_charge[t1]*xs_charge[t2] );
+        }
+        if (i==3 && xs_q_repulsion(t1, t2)){
+           return ( xs_charge[t1]*xs_charge[t2] );
+        }
+        return 0;
 }
 
 inline bool xs_catpi_possible(sz t1, sz t2) {

@@ -173,32 +173,18 @@ void terms::eval_additive_aux(const model& m, const atom_index& i, const atom_in
 
 	sz offset = 0;
 	VINA_FOR_IN(k, distance_additive_terms)
-		if(r < distance_additive_terms[k].cutoff){
-			//Maybe you can do this:
-			/*if (distance_additive_terms[k].name == "ring_dependent_chpi"){
-				//Here, expand ligand aliphatic carbons and receptor ring objects
-				//Then, expand protein aliphatic carbons and ligand ring objects
-				out[k] += distance_additive_terms[k].evalchpi(lig_carb, rec_rings)
-			}
-			else{
-				out[k] += distance_additive_terms[k].eval(a, b, r);
-			}*/
-
+		if(r < distance_additive_terms[k].cutoff)
 			out[k] += distance_additive_terms[k].eval(a, b, r);
-		}
 
 	offset += distance_additive_terms.size();
 	VINA_FOR_IN(k, usable_terms)
-		if(r < usable_terms[k].cutoff){
-		//I've tested, only this loop ever gets entered. 
+		if(r < usable_terms[k].cutoff)
 			out[offset + k] += usable_terms[k].eval(a, b, r);
-		}
 
 	offset += usable_terms.size();
 	VINA_FOR_IN(k, additive_terms)
-		if(r < additive_terms[k].cutoff){
+		if(r < additive_terms[k].cutoff)
 			out[offset + k] += additive_terms[k].eval(m, i, j);
-		}
 	
 	VINA_CHECK(offset + additive_terms.size() == size_internal());
 }
