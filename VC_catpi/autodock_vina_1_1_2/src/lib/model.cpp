@@ -1145,7 +1145,7 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 
 	pr dH_minusTdS = this->eval_chpi(false);
 	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
-	//e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second; 
+	//e += (this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second); 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1820,12 +1820,17 @@ fl model::eval_chpi_enthalpy_c(fl r){
 fl model::eval_chpi_entropy(fl horizontal_offset){
 	if (horizontal_offset >= chpi_ho_max) return 0;
 	fl ho_effective = std::max(horizontal_offset, chpi_ho_epsilon);
-	//-TdS = -0.616*ln(horizontal_offset) + 0.2144 (0 ≤ r ≤ 1.4, R^2 = 0.998). Unit is kcal/mol, using S=-kb*p*ln(p) based on PDB data.
-	//return (-0.616 * std::log(ho_effective) + 0.2144);  1.4A
+	//return (-0.594 * std::log(ho_effective) + 1.0609);  //6.0A, using intra-protein interactions. 
+	//return (-0.594 * std::log(ho_effective) + 1.0066);  //5.5A, using intra-protein interactions. 
+	//return (-0.595 * std::log(ho_effective) + 0.9460);  //5.0A, using intra-protein interactions. 
+	//return (-0.596 * std::log(ho_effective) + 0.9091);  //4.7A, using intra-protein interactions.
+	//return (-0.597 * std::log(ho_effective) + 0.8846);  //4.5A, using intra-protein interactions. 
+	//return (-0.599 * std::log(ho_effective) + 0.8172);  //4.0A, using intra-protein interactions. 
 	//return (-0.603 * std::log(ho_effective) + 0.7505);  3.5A
-	//return (-0.605 * std::log(ho_effective) + 0.6564);  //3A
-	//return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
-	return (-0.613 * std::log(ho_effective) + 0.2108);  //1.4A, using intra-protein interactions. 
+	//return (-0.605 * std::log(ho_effective) + 0.6564);  //3.0A
+	return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
+	//return (-0.611 * std::log(ho_effective) + 0.4192);  //2.0A
+	//return (-0.613 * std::log(ho_effective) + 0.2108);  //1.4A, using intra-protein interactions. 
 }
 
 void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, pr& dH_minusTdS, bool score_in_place){
@@ -2115,17 +2120,13 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		fl e_total = e + e2;
 		fl e_deriv = deriv + deriv2;
 
-		fl ef = e_total;
-		//fl deriv_total = fd*e_total + f*e_deriv;
 		fl deriv_total = e_deriv;
-		//fl deriv_total = f*e_deriv;
-		//std::cout << "Factor: " << f << " E total: " << e_total << " Ef: " << ef << " and deriv total: " << deriv_total << std::endl;
-                this_pair_e_dor.first += ef; this_pair_e_dor.second += deriv_total;
+                this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
-		//fl dor = (r > 1) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
-		fl dor = this->weight_chpi * this_pair_e_dor.second / r;
+		fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
+		//fl dor = this->weight_chpi * this_pair_e_dor.second / r;
 		//fl dor = this->weight_chpi * this_pair_e_dor.second;
-		dH += ef;
+		dH += e_total;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
 
 		if (ligand_aliphatic){
@@ -2981,18 +2982,30 @@ void model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_c
 
 	//pr entropy_e_dor = (fast) ? this->eval_chpi_entropy_fast(ccho) : this->eval_chpi_entropy_deriv(ccho);
 	//fl minusTdS = entropy_e_dor.first; fl entropy_dor = -this->weight_chpi * entropy_e_dor.second;
+	
+	//return (-0.594 * std::log(ho_effective) + 1.0609);  //6.0A, using intra-protein interactions. 
+        //return (-0.594 * std::log(ho_effective) + 1.0066);  //5.5A, using intra-protein interactions. 
+        //return (-0.595 * std::log(ho_effective) + 0.9460);  //5.0A, using intra-protein interactions. 
+        //return (-0.596 * std::log(ho_effective) + 0.9091);  //4.7A, using intra-protein interactions. 
+        //return (-0.597 * std::log(ho_effective) + 0.8846);  //4.5A, using intra-protein interactions. 
+        //return (-0.599 * std::log(ho_effective) + 0.8172);  //4.0A, using intra-protein interactions. 
+        //return (-0.603 * std::log(ho_effective) + 0.7505);  3.5A
+        //return (-0.605 * std::log(ho_effective) + 0.6564);  //3.0A
+        //return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
+        //return (-0.611 * std::log(ho_effective) + 0.4192);  //2.0A
+        //return (-0.613 * std::log(ho_effective) + 0.2108);  //1.4A, using intra-protein interactions.
+
 	fl vertical_factor = slope_step(chpi_vo_max_h, chpi_vertical_optimum_h, hcvo_closest);
 	//fl vertical_factor = 1;
+	if (hcho_closest > chpi_ho_max) return;
 	fl minusTdS = vertical_factor * eval_chpi_entropy(hcho_closest);
-	//fl entropy_dor = vertical_factor * -this->weight_chpi * -0.616 / (hcho_closest * hcho_closest); 
-	//fl entropy_d = vertical_factor * -this->weight_chpi * -0.605 / hcho_closest;
-	//fl entropy_d = vertical_factor * -this->weight_chpi * -0.607 / hcho_closest;
-	fl entropy_d = vertical_factor * -0.613 / hcho_closest;
+	fl entropy_d = vertical_factor * -this->weight_chpi * -0.607 / hcho_closest;
 	fl entropy_dor = entropy_d / hcho_closest; 
 
 	//std::cout << "Entopy vertical offset " << hcvo_closest << " and factor: " << vertical_factor << std::endl;
 	
         dH_minusTdS.second += minusTdS;
+	//return;
         vec entropy_deriv = horizontal; entropy_deriv *= entropy_dor;
 
 	if (ligand_aliphatic){
@@ -3130,7 +3143,8 @@ void model::eval_chpi_entropy_set_force(vec* h, sz closest_h_i, sz h_closest_ind
 	fl vertical_factor = slope_step(chpi_vo_max_h, chpi_vertical_optimum_h, a1h_vo);
 	fl minusTdS = vertical_factor * this->eval_chpi_entropy(ho_effective);
 	dH_minusTdS.second += minusTdS;
-	fl deriv = vertical_factor * -this->weight_chpi * -0.616 / ho_effective;
+	//fl deriv = vertical_factor * -this->weight_chpi * -0.616 / ho_effective;
+	fl deriv = vertical_factor * -0.616 / ho_effective;
 	entropic_force *= deriv;
 
 	if (ligand_aliphatic){
@@ -3167,7 +3181,7 @@ vec* model::choose_closest_centroid(vec* h, vec& centroid, vecv& centroids){
 	return &(centroids[index]);
 }
 
-pr model::calc_horizontal_factor(fl rh){
+/*pr model::calc_horizontal_factor(fl rh){
 	if (rh <= chpi_ho_max) return pr(1,0);
 	else if (rh <= chpi_ho_end){
 		fl a1 = rh - chpi_ho_max;
@@ -3178,4 +3192,4 @@ pr model::calc_horizontal_factor(fl rh){
 		return pr(f, deriv);
 	}
 	return pr(0,0);
-}
+}*/

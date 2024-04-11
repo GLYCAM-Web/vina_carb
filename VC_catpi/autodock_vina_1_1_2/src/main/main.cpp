@@ -202,6 +202,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 
 		pr chpi_dH_TdS = m.eval_chpi(true);
 		fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
+		//fl chpi_dG = m.weight_chpi * chpi_dH_TdS.first + chpi_dH_TdS.second;
                 log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 
 		VINA_CHECK(weights.size() == term_values.size() + 1);
@@ -259,10 +260,10 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 			VINA_FOR_IN(i, out_cont)
 				if(not_max(out_cont[i].e))
 					{
-					change g(m.get_size());
-					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c);
-          				out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, false);
-					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, false);
+					//change g(m.get_size());
+					//fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c);
+          				//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, false);
+					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, false);
 					out_cont[i].vce=m.eval_chi(chi_coeff,chi_cutoff);
 					out_cont[i].e+=out_cont[i].vce;
 					} 

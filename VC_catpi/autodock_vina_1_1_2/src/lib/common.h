@@ -443,11 +443,11 @@ inline fl slope_step(fl x_bad, fl x_good, fl x) {
 const double chpi_miu = 4.49, chpi_sigma = 0.75, chpi_const = 0.26, chpi_dcut = 8.0, sqr_chpi_dcut = sqr(chpi_dcut);
 const double g_denominator = (double) 2 * chpi_sigma * chpi_sigma; 
 const double g_coeff = chpi_const / (double) std::sqrt(2 * M_PI * chpi_sigma * chpi_sigma);
-const double chpi_ho_epsilon = 0.005, chpi_vertical_optimum = 3.80, chpi_vo_max_c = 6.00, chpi_ho_max = 1.40, sqr_chpi_ho_max = sqr(chpi_ho_max);
+const double chpi_ho_epsilon = 0.005, chpi_vertical_optimum = 3.80, chpi_vo_max_c = 6.00, chpi_ho_max = 2.50, sqr_chpi_ho_max = sqr(chpi_ho_max);
 const double chpi_ho_end = 6.00;
 const double chpi_ho_out_of_edge = 0.19;
 const double chpi_mp_distance_estimated = 1.21;
-const double chpi_vertical_optimum_h = 2.70;
+const double chpi_vertical_optimum_h = 2.80;
 
 //chpi_dcut should be 8.0A and match the Vina sf cutoff. Otherwise this is wrong.
 
@@ -470,11 +470,12 @@ const double chpi_vertical_optimum_h = 2.70;
 //const double chpi_rc = 0.12, chpi_ofs = -0.78, chpi_p = 4.00;
 
 //AD, closest hydrogen has attraction only, but all hydrogens have repulsion
-const double chpi_miu_h = 3.02, chpi_sigma_h = 0.91, chpi_const_h = 0.45, chpi_miu_h2 = 5.14, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.014;
-const double chpi_rc = 3.05, chpi_ofs = -0.05, chpi_p = 4.55;
+//const double chpi_miu_h = 3.02, chpi_sigma_h = 0.91, chpi_const_h = 0.45, chpi_miu_h2 = 5.14, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.014;
+//const double chpi_rc = 3.05, chpi_ofs = -0.05, chpi_p = 4.55;
 
 //A, fitted to A horizontal
-//const double chpi_miu_h = 3.02, chpi_sigma_h = 0.40, chpi_const_h = 0.20, chpi_miu_h2 = 4.40, chpi_sigma_h2 = 0.93, chpi_const_h2 = 0.79;
+//0.11 2.99 0.29 0 0.19 4.15 1.45 1 2.95 -0.15 4.55 0.030485
+const double chpi_miu_h = 2.99, chpi_sigma_h = 0.29, chpi_const_h = 0.11, chpi_miu_h2 = 4.15, chpi_sigma_h2 = 1.45, chpi_const_h2 = 0.19;
 
 //AD, isobutane, fitting without phobic
 //const double chpi_miu_h = 2.67, chpi_sigma_h = 0.47, chpi_const_h = 0.44, chpi_miu_h2 = 4.86, chpi_sigma_h2 = 0.40, chpi_const_h2 = 0.11;
