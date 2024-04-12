@@ -2121,8 +2121,8 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		fl deriv_total = e_deriv;
                 this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
-		fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
-		//fl dor = this->weight_chpi * this_pair_e_dor.second / r;
+		//fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
+		fl dor = this->weight_chpi * this_pair_e_dor.second / r;
 		//fl dor = this->weight_chpi * this_pair_e_dor.second;
 		dH += e_total;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
