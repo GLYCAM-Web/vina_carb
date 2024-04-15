@@ -443,7 +443,7 @@ inline fl slope_step(fl x_bad, fl x_good, fl x) {
 const double chpi_miu = 4.49, chpi_sigma = 0.75, chpi_const = 0.26, chpi_dcut = 8.0, sqr_chpi_dcut = sqr(chpi_dcut);
 const double g_denominator = (double) 2 * chpi_sigma * chpi_sigma; 
 const double g_coeff = chpi_const / (double) std::sqrt(2 * M_PI * chpi_sigma * chpi_sigma);
-const double chpi_ho_epsilon = 0.005, chpi_vertical_optimum = 3.80, chpi_vo_max_c = 6.00, chpi_ho_max = 2.50, sqr_chpi_ho_max = sqr(chpi_ho_max);
+const double chpi_ho_epsilon = 0.005, chpi_vertical_optimum = 3.80, chpi_vo_max_c = 6.00, chpi_ho_max = 4.70, sqr_chpi_ho_max = sqr(chpi_ho_max);
 const double chpi_ho_end = 6.00;
 const double chpi_ho_out_of_edge = 0.19;
 const double chpi_mp_distance_estimated = 1.21;

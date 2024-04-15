@@ -2084,12 +2084,6 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
         fl hcc_vo = std::abs(hcc_dp); //H-centroid vertical offset
 	fl hcc_ho = std::sqrt(sqr(magnitude(hcc))-sqr(hcc_vo));
 
-	//if (hcc_ho >= chpi_ho_end) return;
-
-	//pr hf_val_deriv = this->calc_horizontal_factor(hcc_ho);
-	//fl& f = hf_val_deriv.first; 
-	//fl& fd = hf_val_deriv.second;
-
 	//VINA_FOR(j, r.num_aromatic_carbons){
 		//vec* rc = ar_coord_ptrs[j];
                 //sz& ar_atom_index = ar_atom_indices[j];
@@ -2115,14 +2109,21 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		fl e = eval_chpi_enthalpy_h(r); fl deriv = (chpi_miu_h - r) * inv_ssqr * e;
                 fl e2 = eval_chpi_enthalpy_h2(r); fl deriv2 = (chpi_miu_h2 -r) * inv_ssqr2 * e2;
 
-		fl e_total = e + e2;
-		fl e_deriv = deriv + deriv2;
+		pr f_df = this->calc_horizontal_factor(hcc_ho);
+		fl f = f_df.first; fl df = f_df.second;
+		//std::cout << "Horiz and df " << hcc_ho << "," << df << std::endl;
+		//f = 1;
+		//std::cout << "Horiz and f: " << hcc_ho << "," << f << std::endl;
 
-		fl deriv_total = e_deriv;
+		fl e_total = f*(e + e2);
+		fl e_deriv = deriv + deriv2;
+		fl deriv_total = df*e_total + f*e_deriv;
+
+		std::cout << "Raw and factored deriv " << hcc_ho << "," << e_deriv << "," << deriv_total << std::endl;
                 this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
-		fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
-		//fl dor = this->weight_chpi * this_pair_e_dor.second / r;
+		//fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
+		fl dor = this->weight_chpi * this_pair_e_dor.second / r;
 		//fl dor = this->weight_chpi * this_pair_e_dor.second;
 		dH += e_total;
 		vec this_pair_deriv = ra_to_la; this_pair_deriv *= dor;
@@ -2984,7 +2985,7 @@ void model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_c
 	//return (-0.594 * std::log(ho_effective) + 1.0609);  //6.0A, using intra-protein interactions. 
         //return (-0.594 * std::log(ho_effective) + 1.0066);  //5.5A, using intra-protein interactions. 
         //return (-0.595 * std::log(ho_effective) + 0.9460);  //5.0A, using intra-protein interactions. 
-        //return (-0.596 * std::log(ho_effective) + 0.9091);  //4.7A, using intra-protein interactions. 
+        //return (-0.595 * std::log(ho_effective) + 0.9087);  //4.7A, using intra-protein interactions. 
         //return (-0.597 * std::log(ho_effective) + 0.8846);  //4.5A, using intra-protein interactions. 
         //return (-0.599 * std::log(ho_effective) + 0.8172);  //4.0A, using intra-protein interactions. 
         //return (-0.603 * std::log(ho_effective) + 0.7505);  3.5A
@@ -2997,7 +2998,7 @@ void model::eval_chpi_entropy_set_force_old_each_centroid(vec* h_closest, sz h_c
 	//fl vertical_factor = 1;
 	if (hcho_closest > chpi_ho_max) return;
 	fl minusTdS = vertical_factor * eval_chpi_entropy(hcho_closest);
-	fl entropy_d = vertical_factor * -this->weight_chpi * -0.607 / hcho_closest;
+	fl entropy_d = vertical_factor * -this->weight_chpi * -0.595 / hcho_closest;
 	fl entropy_dor = entropy_d / hcho_closest; 
 
 	//std::cout << "Entopy vertical offset " << hcvo_closest << " and factor: " << vertical_factor << std::endl;
@@ -3179,15 +3180,18 @@ vec* model::choose_closest_centroid(vec* h, vec& centroid, vecv& centroids){
 	return &(centroids[index]);
 }
 
-/*pr model::calc_horizontal_factor(fl rh){
+pr model::calc_horizontal_factor(fl rh){
 	if (rh <= chpi_ho_max) return pr(1,0);
-	else if (rh <= chpi_ho_end){
-		fl a1 = rh - chpi_ho_max;
-		fl a2 = chpi_ho_end - chpi_ho_max;
+	else if (rh < chpi_ho_end){
+		fl a1 = rh - chpi_ho_end;
+		fl a2 = chpi_ho_max - chpi_ho_end;
+		fl z = a1/a2;
 
-		fl f = 1 - sqr(a1/a2);
-		fl deriv = -2.0 * a1 / sqr(a2);
+		//fl f = 1 - sqr(a1/a2);
+		//fl deriv = -2.0 * a1 / sqr(a2);
+		fl f = std::sqrt(z);
+		fl deriv = 0.5 * std::pow(z, -1.5) / a2;
 		return pr(f, deriv);
 	}
 	return pr(0,0);
-}*/
+}

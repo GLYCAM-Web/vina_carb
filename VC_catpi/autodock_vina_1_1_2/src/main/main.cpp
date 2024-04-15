@@ -220,7 +220,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 //log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 
 		//Yao added 20230618
-		//e2 += chpi_dG;
+		e2 += chpi_dG;
 		VINA_FOR_IN(i, term_values){
 			e2 += term_values[i] * weights[i];
 		}
@@ -275,8 +275,8 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 				if(not_max(out_cont[i].e))
 					{
 					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c); //Yao added 20240309 according to VC_GAG
-					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, true); //20240309 According to VC_GAG
-					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, true);
+					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, true); //20240309 According to VC_GAG
+					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, true);
 					out_cont[i].vce=m.eval_chi(chi_coeff,chi_cutoff);
 					out_cont[i].e+=out_cont[i].vce;
 					} 

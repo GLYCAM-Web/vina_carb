@@ -287,7 +287,7 @@ struct chpi_gaussian : public usable { //Yao's CH-pi function 3
 	}
 	fl eval(sz t1, sz t2, fl r) const {
 		//Now using the ring-dependent term. Let this function always return zero.
-		//return 0;
+		return 0;
 
                 if(xs_chpi_possible(t1, t2)){
  			return g_coeff * std::exp(-sqr(r-chpi_miu)/g_denominator);
