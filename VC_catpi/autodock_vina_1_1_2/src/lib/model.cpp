@@ -1821,12 +1821,12 @@ fl model::eval_chpi_entropy(fl horizontal_offset){
 	//return (-0.594 * std::log(ho_effective) + 1.0609);  //6.0A, using intra-protein interactions. 
 	//return (-0.594 * std::log(ho_effective) + 1.0066);  //5.5A, using intra-protein interactions. 
 	//return (-0.595 * std::log(ho_effective) + 0.9460);  //5.0A, using intra-protein interactions. 
-	//return (-0.596 * std::log(ho_effective) + 0.9091);  //4.7A, using intra-protein interactions.
+	return (-0.595 * std::log(ho_effective) + 0.9087);  //4.7A, using intra-protein interactions.
 	//return (-0.597 * std::log(ho_effective) + 0.8846);  //4.5A, using intra-protein interactions. 
 	//return (-0.599 * std::log(ho_effective) + 0.8172);  //4.0A, using intra-protein interactions. 
 	//return (-0.603 * std::log(ho_effective) + 0.7505);  3.5A
 	//return (-0.605 * std::log(ho_effective) + 0.6564);  //3.0A
-	return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
+	//return (-0.607 * std::log(ho_effective) + 0.5472);  //2.5A
 	//return (-0.611 * std::log(ho_effective) + 0.4192);  //2.0A
 	//return (-0.613 * std::log(ho_effective) + 0.2108);  //1.4A, using intra-protein interactions. 
 }
@@ -2067,6 +2067,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	if (h_centroid_dist.empty()) return;
 
 	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
+	if (closest_h_i == -1) return;
 	//flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
 	//fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
 
@@ -2119,7 +2120,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		fl e_deriv = deriv + deriv2;
 		fl deriv_total = df*e_total + f*e_deriv;
 
-		std::cout << "Raw and factored deriv " << hcc_ho << "," << e_deriv << "," << deriv_total << std::endl;
+		//std::cout << "Raw and factored deriv " << hcc_ho << "," << e_deriv << "," << deriv_total << std::endl;
                 this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
 
 		//fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
@@ -2138,7 +2139,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	}
 
         dH_minusTdS.first += dH;
-	return; //No entropy until I get at least 33% in performance
+	//return; //No entropy until I get at least 33% in performance
 
 	//this->eval_chpi_entropy_set_force2(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	//this->eval_chpi_entropy_set_force(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
@@ -2211,7 +2212,9 @@ int model::choose_interacting_h(std::map<sz, fl>& h_centroid_dist, szv& ip_hs){
                         closest_h_i = h_i;
                 }
         }
-	VINA_CHECK(closest_h_i != -1);
+	//std::cout << "cp1" << std::endl;
+	//VINA_CHECK(closest_h_i != -1);
+	//std::cout << "cp2" << std::endl;
 	return closest_h_i;
 }
 
