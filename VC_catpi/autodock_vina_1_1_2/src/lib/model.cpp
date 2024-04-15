@@ -2067,6 +2067,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	if (h_centroid_dist.empty()) return;
 
 	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
+	if (closest_h_i == -1) return;
 	//flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
 	//fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
 
