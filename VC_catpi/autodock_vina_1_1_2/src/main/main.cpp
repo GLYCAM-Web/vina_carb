@@ -220,7 +220,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 //log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 
 		//Yao added 20230618
-		//e2 += chpi_dG;
+		e2 += chpi_dG;
 		VINA_FOR_IN(i, term_values){
 			e2 += term_values[i] * weights[i];
 		}
