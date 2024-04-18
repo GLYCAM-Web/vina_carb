@@ -214,11 +214,6 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 		VINA_CHECK(weights.size() == term_values.size() + 1);
 		fl e2 = 0;
 
-		//For Amika: this is Yao's CHpi scoring function(under devlopent), always comment out. 
-		//pr chpi_dH_TdS = m.eval_chpi(true, nnc.is_non_cache);
-		//fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
-                //log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
-
 		//Yao added 20230618
 		e2 += chpi_dG;
 		VINA_FOR_IN(i, term_values){

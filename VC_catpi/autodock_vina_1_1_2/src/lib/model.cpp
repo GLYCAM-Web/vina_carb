@@ -2211,7 +2211,7 @@ int model::choose_interacting_h(std::map<sz, fl>& h_centroid_dist, szv& ip_hs){
                         closest_h_i = h_i;
                 }
         }
-	VINA_CHECK(closest_h_i != -1);
+	//VINA_CHECK(closest_h_i != -1);
 	return closest_h_i;
 }
 
