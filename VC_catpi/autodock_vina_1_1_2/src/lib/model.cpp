@@ -1142,9 +1142,8 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
-	pr dH_minusTdS = this->eval_chpi(false);
-	e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
-	//e += (this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second); 
+	fl e_chpi = this->eval_chpi(false);
+	e += e_chpi; 
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1211,10 +1210,8 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 
 	fl e = eval(p, ig, v, c); // sets c
 
-	pr dH_minusTdS = this->eval_chpi(score_in_place);
-        //Add both enthalpy and entropy to e.
-        e += this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second);
-        //e += this->weight_chpi * dH_minusTdS.first + dH_minusTdS.second;
+	fl e_chpi = this->eval_chpi(score_in_place);
+        e += e_chpi;
 	return sf.conf_independent(*this, e - intramolecular_energy);
 }
 
@@ -1865,9 +1862,9 @@ void model::eval_chpi_c_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		pr e_dor = (score_in_place) ? this->eval_chpi_enthalpy_c_fast(r): this->eval_chpi_enthalpy_c_deriv(r);
 
 		dH += e_dor.first;
+		//total_deriv += this_pair_deriv;
 		vec this_pair_deriv = ra_to_la;  this_pair_deriv *= e_dor.second;
 
-		//total_deriv += this_pair_deriv;
 		if (ligand_aliphatic){
 			this->minus_forces[carbon_index] += this_pair_deriv;
                 }
@@ -1957,6 +1954,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 
 	std::map<sz, fl> h_centroid_dist;
 	szv ip_hs;
+
 	//std::vector<flv> h_ring_dists(c.num_h_neighbors, flv(r.num_ring_atoms, max_fl));
 
 	VINA_FOR(i, c.num_h_neighbors){
@@ -2012,54 +2010,6 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 			}
 			
 			pr this_pair_e_dor(0,0);	
-
-			/*fl repulsion_e = chpi_A / std::pow(r,chpi_n); fl repulsion_deriv = -chpi_A * chpi_n * std::pow(r, -chpi_n -1);
-			//std::cout << "Repulsio deriv is: " << repulsion_deriv << std::endl;
-			curl (repulsion_e, repulsion_deriv, 1000);
-			this_pair_e_dor.first -= repulsion_e; this_pair_e_dor.second -= repulsion_deriv;*/
-
-			//fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1) + chpi_ofs; 
-			/*fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1); 
-			if (rep_distance < 0){
-				fl d = -rep_distance;
-				fl repulsion_e = chpi_rc * std::pow(d, chpi_p); fl repulsion_deriv = -chpi_rc * chpi_p * std::pow(d, chpi_p -1);
-				this_pair_e_dor.first -= repulsion_e; this_pair_e_dor.second -= repulsion_deriv;
-				dH -= repulsion_e;
-			}*/
-
-			//fl rep_distance = r - 3.0;
-			/*fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
-                	if (rep_distance < 0){
-				fl repulsion_e = sqr(rep_distance); fl repulsion_deriv = 2.0 * rep_distance;
-                        	this_pair_e_dor.first -= repulsion_e; this_pair_e_dor.second -= repulsion_deriv;
-                        	dH -= repulsion_e;
-                	}*/
-			//pr e_dor = (fast) ? this->eval_chpi_enthalpy_h_fast(r, chn_cosine) : this->eval_chpi_enthalpy_h_deriv(r, chn_cosine);
-			//pr e_dor = (fast) ? this->eval_chpi_enthalpy_h_fast(r, chn_cosine_abs) : this->eval_chpi_enthalpy_h_deriv(r, chn_cosine_abs);
-
-			/*fl e1 = eval_chpi_enthalpy_h(r); fl e2 = eval_chpi_enthalpy_h2(r);
-			fl d1 = (chpi_miu_h - r) * inv_ssqr * e1; fl d2 = (chpi_miu_h2 - r) * inv_ssqr2 * e2;
-			fl h_ar_dH = e1+e2; fl h_ar_dor = d1+d2;*/
-
-			/*fl e1 = eval_chpi_enthalpy_h(r); fl d1 = (chpi_miu_h - r) * inv_ssqr * e1;
-			fl h_ar_dH = e1; fl h_ar_dor = d1;
-
-                	dH += h_ar_dH;
-			this_pair_e_dor.first += h_ar_dH; this_pair_e_dor.second += h_ar_dor;*/
-			//std::cout << "R: " << r << " affinity: " << this_pair_e_dor.first << std::endl;
-
-			/*this_pair_e_dor.second *= (this->weight_chpi / r);
-
-                	vec this_pair_deriv = ra_to_la; this_pair_deriv *= this_pair_e_dor.second;
-			if (ligand_aliphatic){
-                		//this->minus_forces[carbon_index] += this_pair_deriv;
-                		this->minus_forces[h_index] += this_pair_deriv;
-			}
-			else{
-				//this->minus_forces[ar_atom_index] += this_pair_deriv;
-				this->minus_forces[ring_atom_index] += this_pair_deriv;
-                	}*/
-
         	}
 
 	}
@@ -2068,14 +2018,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 
 	int closest_h_i = this->choose_interacting_h(h_centroid_dist, ip_hs);
 	if (closest_h_i == -1) return;
-	//flv& closest_h_ring_dists = h_ring_dists[closest_h_i];
-	//fl inv_dist_sqr_sum = sum(closest_h_ring_dists);
 
-	//std::cout << "Ip hs size: " << ip_hs.size() << " num h neighbors " << c.num_h_neighbors << std::endl;
-	//fl scaling_factor = 1;
-	//fl scaling_factor = (fast) ? 1 : this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
-	//fl scaling_factor = this->get_chpi_scaling_factor(c.num_h_neighbors, ip_hs.size());
-	//std::cout << "Scaling factor: " << scaling_factor << std::endl;
 	vec* h_closest = h_coords[closest_h_i];
 	vec* closest_centroid = this->choose_closest_centroid(h_closest, centroid, r.subcycle_centroids);
 	sz h_closest_index = h_neighbor_indices[closest_h_i];
@@ -2085,7 +2028,7 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
         fl hcc_vo = std::abs(hcc_dp); //H-centroid vertical offset
 	fl hcc_ho = std::sqrt(sqr(magnitude(hcc))-sqr(hcc_vo));
 
-	//VINA_FOR(j, r.num_aromatic_carbons){
+	//VINA_FOR(j, r.num_aromatic_carbons)
 		//vec* rc = ar_coord_ptrs[j];
                 //sz& ar_atom_index = ar_atom_indices[j];
 	VINA_FOR(j, r.num_ring_atoms){
@@ -2097,9 +2040,6 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
                 if (r >= chpi_hcut) continue;
 		pr this_pair_e_dor(0,0);
 			
-		//fl inv_dist_sqr = closest_h_ring_dists[j];
-		//fl wt = inv_dist_sqr / inv_dist_sqr_sum;
-
 		fl rep_distance = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.1);
                 if (rep_distance < 0){
                         fl repulsion_e = sqr(rep_distance); fl repulsion_deriv = 2.0 * rep_distance;
@@ -2110,11 +2050,9 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 		fl e = eval_chpi_enthalpy_h(r); fl deriv = (chpi_miu_h - r) * inv_ssqr * e;
                 fl e2 = eval_chpi_enthalpy_h2(r); fl deriv2 = (chpi_miu_h2 -r) * inv_ssqr2 * e2;
 
-		pr f_df = this->calc_horizontal_factor(hcc_ho);
+		//pr f_df = this->calc_horizontal_factor(hcc_ho);
+		pr f_df(1,0);
 		fl f = f_df.first; fl df = f_df.second;
-		//std::cout << "Horiz and df " << hcc_ho << "," << df << std::endl;
-		//f = 1;
-		//std::cout << "Horiz and f: " << hcc_ho << "," << f << std::endl;
 
 		fl e_total = f*(e + e2);
 		fl e_deriv = deriv + deriv2;
@@ -2139,11 +2077,121 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 	}
 
         dH_minusTdS.first += dH;
-	//return; //No entropy until I get at least 33% in performance
+	return; //No entropy until I get at least 33% in performance
 
 	//this->eval_chpi_entropy_set_force2(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	//this->eval_chpi_entropy_set_force(h_closest, closest_h_i, h_closest_index, h_ring_dists, r, dH_minusTdS, ligand_aliphatic);
 	this->eval_chpi_entropy_set_force_old(h_closest, h_closest_index, r, dH_minusTdS, ligand_aliphatic);
+	return;
+}
+void model::undo_attraction_scoring(fl& e_chpi, bool score_in_place){
+	fl e_gau1 = 0, e_gau2 = 0, e_phobic = 0;
+	VINA_FOR(i, this->num_l_aro_rings){
+                ring_attribute& r_inf = this->lig_ar_ring_info[i];
+                VINA_FOR(j, this->num_r_ali_carbs){
+                        this->undo_attraction_scoring_each_pair(this->rec_ali_carb_info[j], r_inf, e_gau1, e_gau2, e_phobic, score_in_place);
+                }
+        }
+
+        VINA_FOR(i, this->num_r_aro_rings){
+                ring_attribute& r_inf = this->rec_ar_ring_info[i];
+                VINA_FOR(j, this->num_l_ali_carbs){
+                        this->undo_attraction_scoring_each_pair(this->lig_ali_carb_info[j], r_inf, e_gau1, e_gau2, e_phobic, score_in_place);
+                }
+        }
+
+	if (score_in_place){
+		e_gau1 *= this->weight_gauss1;
+		e_gau2 *= this->weight_gauss2;
+		e_phobic *= this->weight_hydrophobic;
+	}
+	//std::cout << "g1, g2, e phobic " << e_gau1 << "," << e_gau2 << "," << e_phobic << std::endl;
+	e_chpi -= (e_gau1 + e_gau2 + e_phobic);
+
+        return;	
+}
+
+void model::undo_attraction_scoring_each_pair(aliphatic_carbon_attribute& c, ring_attribute& r, fl& e_gau1, fl& e_gau2, fl& e_phobic, bool score_in_place){
+	if (c.num_h_neighbors == 0) return;
+        bool& ligand_aliphatic = c.is_ligand;
+        sz& carbon_index = c.carbon_atom_index;
+
+        vec* c_coord = c.c_coord;
+	//std::cout << "C coord " << (*c_coord)[0] << "," << (*c_coord)[1] << "," << (*c_coord)[2] << "\n";
+	//vec& centroid = r.centroid;
+        //vec& normal = r.normal;
+        //vec cc = *c_coord - centroid;
+        //fl ccl = magnitude(cc);
+        //fl ccdp = cc * normal;
+        //fl ccvo = std::abs(ccdp); //C-centroid vertical offset. All normal vectors are pre-normalized, length = 1.
+
+        vptrv& ar_coord_ptrs = r.aromatic_carbon_coord_ptrs;
+        szv& ar_atom_indices = r.aromatic_carbon_indices;
+
+        aptrv& all_atom_ptrs = r.all_atom_ptrs;
+        vptrv& ring_atoms_coords = r.all_atom_coord_ptrs;
+        szv& ring_atom_indices = r.all_atom_indices;
+
+	VINA_FOR(j, r.num_ring_atoms){
+                vec* rc = ring_atoms_coords[j];
+                sz& ring_atom_index = ring_atom_indices[j];
+		vec ra_to_la = (ligand_aliphatic) ? *c_coord - *rc : *rc - *c_coord;
+		fl r = magnitude(ra_to_la);
+                if (r >= chpi_dcut) continue;
+
+		fl r_optimal = r - (xs_vdw_radii[all_atom_ptrs[j]->xs] + 1.9); 
+		//std::cout << "R optimal " << r_optimal << "\n";
+		//std::cout << "Other atom xs: " << all_atom_ptrs[j]->xs << "\n";
+		//std::cout << "Other atom name: " << all_atom_ptrs[j]->atomname << "\n";
+		//std::cout << "r is: " << r << std::endl;
+		//std::cout << "Other atom xs vdw radii: " << xs_vdw_radii[all_atom_ptrs[j]->xs] << "\n";
+		//fl r2 = sqr(r_optimal);
+		fl r2 = sqr(r);
+
+		if (!score_in_place){
+			pr gau1_e_dor = this->eval_gauss1_deriv(r2);
+			pr gau2_e_dor = this->eval_gauss2_deriv(r2);
+			pr phobic_e_dor = this->eval_phobic_deriv(r2);
+			e_gau1 += gau1_e_dor.first;
+			e_gau2 += gau2_e_dor.first;
+			e_phobic += phobic_e_dor.first;
+
+			vec this_pair_deriv = ra_to_la;
+			this_pair_deriv *= (gau1_e_dor.second + gau2_e_dor.second + phobic_e_dor.second);
+                	if (ligand_aliphatic){
+                        	this->minus_forces[carbon_index] -= this_pair_deriv;
+                	}
+                	else{
+                        	this->minus_forces[ring_atom_index] -= this_pair_deriv;
+                	}
+		}
+		else{
+			/*pr gau1_e_fast = this->eval_gauss1_fast(r2);
+			pr gau2_e_fast = this->eval_gauss2_fast(r2);
+			pr phobic_e_fast = this->eval_phobic_fast(r2);
+			e_gau1 += gau1_e_fast.first;
+			e_gau2 += gau2_e_fast.first;
+			e_phobic += phobic_e_fast.first;*/
+
+			e_gau1 += gaussian(r_optimal, 0.5);
+			e_gau2 += gaussian(r_optimal - 3, 2.0);
+			e_phobic += slope_step(1.5, 0.5, r_optimal);
+		}
+		//e_gau1 += gaussian(r_optimal, 0.5);
+		//e_gau2 += gaussian(r_optimal - 3, 2.0);
+		//e_phobic += slope_step(1.5, 0.5, r_optimal);
+
+		//How to get the derivative back?
+		/*vec this_pair_deriv = ra_to_la;
+
+		this_pair_deriv *= e_dor.second;
+                if (ligand_aliphatic){
+                        this->minus_forces[carbon_index] -= this_pair_deriv;
+                }
+                else{
+                        this->minus_forces[ring_atom_index] -= this_pair_deriv;
+                }*/
+        }
 	return;
 }
 
@@ -2218,7 +2266,8 @@ int model::choose_interacting_h(std::map<sz, fl>& h_centroid_dist, szv& ip_hs){
 	return closest_h_i;
 }
 
-pr model::eval_chpi(bool score_in_place){
+fl model::eval_chpi(bool score_in_place){
+	//return 0; //Skip temporarily
 
 	pr dH_minusTdS(0.00, 0.00);
 	VINA_FOR(i, this->num_l_aro_rings){
@@ -2233,7 +2282,10 @@ pr model::eval_chpi(bool score_in_place){
 		this->eval_chpi_c(dH_minusTdS, score_in_place);
 	}
 
-	return dH_minusTdS;
+	fl e_chpi = this->weight_chpi * (dH_minusTdS.first - dH_minusTdS.second); 
+	//this->undo_attraction_scoring(e_chpi, score_in_place);
+	return e_chpi;
+
 }
 
 void model::eval_chpi_c(pr& dH_minusTdS, bool score_in_place){
@@ -2242,10 +2294,8 @@ void model::eval_chpi_c(pr& dH_minusTdS, bool score_in_place){
 		VINA_FOR(j, this->num_r_ali_carbs){
 			this->eval_chpi_c_ring(this->rec_ali_carb_info[j], r_inf, dH_minusTdS, score_in_place);
 		}
-		//Later put catpi, pipi, etc here. 
 	}
 
-	//fl rec_lig_chpi = 0.00;
 	VINA_FOR(i, this->num_r_aro_rings){
 		ring_attribute& r_inf = this->rec_ar_ring_info[i];
 		VINA_FOR(j, this->num_l_ali_carbs){
@@ -2261,7 +2311,6 @@ void model::eval_chpi_h(pr& dH_minusTdS, bool score_in_place){
 
         VINA_FOR(i, this->num_r_ali_carbs){
 		aliphatic_carbon_attribute& c_attr = this->rec_ali_carb_info[i];
-
         	VINA_FOR(j, this->num_l_aro_rings){
                 	ring_attribute& r_inf = this->lig_ar_ring_info[j];
                         this->eval_chpi_h_ring(c_attr, r_inf, dH_minusTdS, score_in_place);
@@ -2514,31 +2563,47 @@ void model::DetectAliphaticCarbons(){
 
 void model::build_chpi_smooth(){
 
-	flv rs = this->calculate_rs_dense();
+	//flv rs = this->calculate_rs_dense();
+	flv rs = this->calculate_rs(sqr(chpi_dcut));
 	this->num_rs = rs.size();
 
 	this->chpi_c_smooth.clear();
 	this->chpi_h_smooth.clear();
 	this->chpi_entropy_smooth.clear();
+	this->gauss1_smooth.clear();
+	this->gauss2_smooth.clear();
+	this->phobic_smooth.clear();
 
 	this->chpi_c_fast.clear();
 	this->chpi_h_fast.clear();
 	this->chpi_entropy_fast.clear();
+	this->gauss1_fast.clear();
+	this->gauss2_fast.clear();
+	this->phobic_fast.clear();
 
 	this->chpi_c_smooth.resize(this->num_rs, pr(0, 0));
 	this->chpi_h_smooth.resize(this->num_rs, pr(0, 0));
 	this->chpi_entropy_smooth.resize(this->num_rs, pr(0, 0));
+	this->gauss1_smooth.resize(this->num_rs, pr(0, 0));
+	this->gauss2_smooth.resize(this->num_rs, pr(0, 0));
+	this->phobic_smooth.resize(this->num_rs, pr(0, 0));
 
 	this->chpi_c_fast.resize(this->num_rs, 0);
 	this->chpi_h_fast.resize(this->num_rs, 0);
 	this->chpi_entropy_fast.resize(this->num_rs, 0);
+	this->gauss1_fast.resize(this->num_rs, 0);
+	this->gauss2_fast.resize(this->num_rs, 0);
+	this->phobic_fast.resize(this->num_rs, 0);
 
 	VINA_FOR(i, this->num_rs){
 		fl r = rs[i];
 		this->chpi_c_smooth[i].first = this->weight_chpi * this->eval_chpi_enthalpy_c(r);
 		this->chpi_h_smooth[i].first = this->weight_chpi * (this->eval_chpi_enthalpy_h(r) + this->eval_chpi_enthalpy_h2(r));
-		//this->chpi_hc_gauss_smooth[i].first = -this->weight_chpi * this->weight_gauss1 * gaussian(r - hc_repulsion_cut, 0.5);
-		//this->chpi_hc_gauss_smooth[i].first = -this->weight_chpi * (this->weight_gauss1 * gaussian(r - hc_repulsion_cut, 0.5) + this->weight_gauss2 * gaussian(r - hc_repulsion_cut - 3, 2));
+		this->gauss1_smooth[i].first = this->weight_gauss1 * gaussian(r , 0.5);
+
+		//std::cout << "Gauss1 smooth " << i << " is " << this->gauss1_smooth[i].first << "\n";
+		this->gauss2_smooth[i].first = this->weight_gauss2 * gaussian(r-3 , 2);
+		this->phobic_smooth[i].first = this->weight_hydrophobic * slope_step(1.5, 0.5, r);
 		this->chpi_entropy_smooth[i].first = -this->weight_chpi * this->eval_chpi_entropy(r);
 	}
 	//std::exit(1);
@@ -2548,9 +2613,12 @@ void model::build_chpi_smooth(){
 		fl& dor_c = this->chpi_c_smooth[i].second;
 		fl& dor_h = this->chpi_h_smooth[i].second;
                 fl& dor_e = this->chpi_entropy_smooth[i].second;
+		fl& dor_g1 = this->gauss1_smooth[i].second;
+		fl& dor_g2 = this->gauss2_smooth[i].second;
+		fl& dor_phobic = this->phobic_smooth[i].second;
 
 		if(i == 0 || i == this->num_rs - 1){
-			dor_c = 0; dor_h = 0; dor_e = 0;
+			dor_c = 0; dor_h = 0; dor_e = 0, dor_g1 = 0, dor_g2 = 0, dor_phobic = 0;
 		}
 		else{
 			fl delta = rs[i+1] - rs[i-1];
@@ -2558,6 +2626,9 @@ void model::build_chpi_smooth(){
 			dor_c = (this->chpi_c_smooth[i+1].first - this->chpi_c_smooth[i-1].first) / (delta * r);
 			dor_h = (this->chpi_h_smooth[i+1].first - this->chpi_h_smooth[i-1].first) / (delta * r);
 			dor_e = (this->chpi_entropy_smooth[i+1].first - this->chpi_entropy_smooth[i-1].first) / (delta * r);
+			dor_g1 = (this->gauss1_smooth[i+1].first - this->gauss1_smooth[i-1].first) / (delta * r);
+			dor_g2 = (this->gauss2_smooth[i+1].first - this->gauss2_smooth[i-1].first) / (delta * r);
+			dor_phobic = (this->phobic_smooth[i+1].first - this->phobic_smooth[i-1].first) / (delta * r);
 		}
 
 		fl f1c = this->chpi_c_smooth[i].first;
@@ -2572,6 +2643,18 @@ void model::build_chpi_smooth(){
                 fl f2e = (i+1 >= this->num_rs) ? 0 : this->chpi_entropy_smooth[i+1].first;
                 this->chpi_entropy_fast[i] = (f2e + f1e) / 2;
 
+		fl f1g1 = this->gauss1_smooth[i].first; 
+                fl f2g1 = (i+1 >= this->num_rs) ? 0 : this->gauss1_smooth[i+1].first;
+		this->gauss1_fast[i] = (f1g1 + f2g1) / 2;
+
+		
+		fl f1g2 = this->gauss2_smooth[i].first; 
+                fl f2g2 = (i+1 >= this->num_rs) ? 0 : this->gauss2_smooth[i+1].first;
+		this->gauss2_fast[i] = (f1g2 + f2g2) / 2;
+
+		fl f1pho = this->phobic_smooth[i].first; 
+                fl f2pho = (i+1 >= this->num_rs) ? 0 : this->phobic_smooth[i+1].first;
+		this->phobic_fast[i] = (f1pho + f2pho) / 2;
 		//std::cout << "Chpi c smooth dor " << rs_c[i] << " is " << dor << std::endl;
 		//std::cout << "Chpi c fast " << rs_c[i] << " is " << this->chpi_c_fast[i] << std::endl;
 	}
@@ -2673,6 +2756,62 @@ pr model::eval_repulsion_deriv(fl r, fl cutoff){
         //return pr(-this->weight_chpi * e, -this->weight_chpi * dor);
 }
 
+pr model::eval_gauss1_deriv(fl r2){
+	sz i1, i2; fl rem;
+        this->calc_smooth_i1_i2_rem(i1, i2, rem, r2); 
+	if (i1 >= this->num_rs -1){
+		std::cout << "Eval gauss1 overflow r: " << r2 << std::endl;
+		std::exit(1);
+	}
+        const pr& p1 = this->gauss1_smooth[i1];
+        const pr& p2 = this->gauss1_smooth[i2];
+        fl e   = p1.first  + rem * (p2.first  - p1.first);
+        fl dor = p1.second + rem * (p2.second - p1.second);
+        return pr(e, dor);
+}
+
+pr model::eval_gauss2_deriv(fl r2){
+        sz i1, i2; fl rem;
+        this->calc_smooth_i1_i2_rem(i1, i2, rem, r2);
+        if (i1 >= this->num_rs -1){
+                std::cout << "Eval gauss2 overflow r: " << r2 << std::endl;
+                std::exit(1);
+        }
+        const pr& p1 = this->gauss2_smooth[i1];
+        const pr& p2 = this->gauss2_smooth[i2];
+        fl e   = p1.first  + rem * (p2.first  - p1.first);
+        fl dor = p1.second + rem * (p2.second - p1.second);
+        return pr(e, dor);
+}
+
+pr model::eval_phobic_deriv(fl r2){
+	sz i1, i2; fl rem;
+        this->calc_smooth_i1_i2_rem(i1, i2, rem, r2);
+        if (i1 >= this->num_rs -1){
+                std::cout << "Eval phobic overflow r: " << r2 << std::endl;
+                std::exit(1);
+        }
+        const pr& p1 = this->phobic_smooth[i1];
+        const pr& p2 = this->phobic_smooth[i2];
+        fl e   = p1.first  + rem * (p2.first  - p1.first);
+        fl dor = p1.second + rem * (p2.second - p1.second);
+        return pr(e, dor);
+}
+
+pr model::eval_gauss1_fast(fl r2){
+        sz i = sz(this->prec_factor * r2);  // r2 is expected < cutoff_sqr, and cutoff_sqr * factor + 1 < n, so no overflow
+	return pr(this->gauss1_fast[i], 0.00);
+}
+
+pr model::eval_gauss2_fast(fl r2){
+        sz i = sz(this->prec_factor * r2);  // r2 is expected < cutoff_sqr, and cutoff_sqr * factor + 1 < n, so no overflow
+	return pr(this->gauss2_fast[i], 0.00);
+}
+
+pr model::eval_phobic_fast(fl r2){
+        sz i = sz(this->prec_factor * r2);  // r2 is expected < cutoff_sqr, and cutoff_sqr * factor + 1 < n, so no overflow
+	return pr(this->phobic_fast[i], 0.00);
+}
 void model::calc_smooth_i1_i2_rem(sz& i1, sz& i2, fl& rem, fl r2){
 	fl r2_factored = this->prec_factor * r2;
         i1 = sz(r2_factored);

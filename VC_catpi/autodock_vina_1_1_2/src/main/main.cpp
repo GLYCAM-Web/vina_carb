@@ -202,8 +202,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 log << "    cat-pi      : " << term_values[5]*weights[5] << '\n';
                 log << "    ch-pi       : " << term_values[6]*weights[6] << '\n';
 
-		pr chpi_dH_TdS = m.eval_chpi(true);
-		fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
+		fl chpi_dG = m.eval_chpi(true);
 		//fl chpi_dG = m.weight_chpi * chpi_dH_TdS.first + chpi_dH_TdS.second;
                 log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 		log << "    qrepulsion  : " << term_values[7]*weights[7] << '\n';
@@ -750,6 +749,7 @@ Thank you!\n";
 		m.weight_repulsion = weight_repulsion;
 		m.weight_gauss1 = weight_gauss1;
 		m.weight_gauss2 = weight_gauss2;
+		m.weight_hydrophobic = weight_hydrophobic;
 		m.chpi_explicit_hydrogen = chpi_use_hydrogen;
 		m.build_residue_info();
 		m.build_ar_ring_info();

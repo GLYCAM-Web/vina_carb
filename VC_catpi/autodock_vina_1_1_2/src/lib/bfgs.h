@@ -66,9 +66,9 @@ template<typename F, typename Conf, typename Change>
 fl line_search(F& f, sz n, const Conf& x, const Change& g, const fl f0, const Change& p, Conf& x_new, Change& g_new, fl& f1) { // returns alpha
 	const fl c0 = 0.0001;
 	const unsigned max_trials = 10;
-	const fl multiplier = 0.5;
+	const fl multiplier = 0.5; //Original code
 	fl alpha = 1;
-
+	
 	const fl pg = scalar_product(p, g, n);
 
 	VINA_U_FOR(trial, max_trials) {

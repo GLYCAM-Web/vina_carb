@@ -43,7 +43,7 @@ struct quasi_newton_aux {
 	//tmp=(fl*)calloc(2,sizeof(fl));
 	//std::vector< std::vector<int> > glyco_info;
 	quasi_newton_aux(model* m_, const precalculate* p_, const igrid* ig_, const vec& v_/*, std::vector< std::vector<int> > glyco_info_*/, fl tmpq, fl chi_coeff_, fl chi_cutoff_) : m(m_), p(p_), ig(ig_), v(v_), chi_coeff(chi_coeff_), chi_cutoff(chi_cutoff_)/*, glyco_info(glyco_info_)*/ {}
-	fl operator()(const conf& c, change& g) {
+	fl operator()(const conf& c, change& g) { //This is f(x,g), Yao 20240418
 //		boost::mutex::scoped_lock lock(cout_mutex);
 		//fl* tmp;
 		//tmpq=(fl*)calloc(2,sizeof(fl));
