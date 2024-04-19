@@ -1142,8 +1142,7 @@ fl  model::eval_deriv  (const precalculate& p, const igrid& ig, const vec& v, co
 
 	fl e = ig.eval_deriv(*this, v[1]); // sets minus_forces, except inflex
 
-	fl e_chpi = this->eval_chpi(false);
-	e += e_chpi; 
+	e += this->eval_chpi(false);
 	
         e += eval_interacting_pairs_deriv(p, v[2], other_pairs, coords, minus_forces); // adds to minus_forces
         VINA_FOR_IN(i, ligands){
@@ -1210,8 +1209,7 @@ fl model::eval_adjusted      (const scoring_function& sf, const precalculate& p,
 
 	fl e = eval(p, ig, v, c); // sets c
 
-	fl e_chpi = this->eval_chpi(score_in_place);
-        e += e_chpi;
+	e += this->eval_chpi(score_in_place);
 	return sf.conf_independent(*this, e - intramolecular_energy);
 }
 
@@ -2009,7 +2007,6 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
 				}
 			}
 			
-			pr this_pair_e_dor(0,0);	
         	}
 
 	}
@@ -2051,15 +2048,12 @@ void model::eval_chpi_h_ring(aliphatic_carbon_attribute& c, ring_attribute& r, p
                 fl e2 = eval_chpi_enthalpy_h2(r); fl deriv2 = (chpi_miu_h2 -r) * inv_ssqr2 * e2;
 
 		//pr f_df = this->calc_horizontal_factor(hcc_ho);
-		pr f_df(1,0);
-		fl f = f_df.first; fl df = f_df.second;
 
-		fl e_total = f*(e + e2);
+		fl e_total = e + e2;
 		fl e_deriv = deriv + deriv2;
-		fl deriv_total = df*e_total + f*e_deriv;
 
 		//std::cout << "Raw and factored deriv " << hcc_ho << "," << e_deriv << "," << deriv_total << std::endl;
-                this_pair_e_dor.first += e_total; this_pair_e_dor.second += deriv_total;
+                this_pair_e_dor.first += e_total; this_pair_e_dor.second += e_deriv;
 
 		//fl dor = (r > 4) ? (this->weight_chpi * this_pair_e_dor.second) : (this->weight_chpi * this_pair_e_dor.second / r);
 		fl dor = this->weight_chpi * this_pair_e_dor.second / r;

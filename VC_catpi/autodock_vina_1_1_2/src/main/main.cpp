@@ -273,6 +273,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 			VINA_FOR_IN(i, out_cont)
 				if(not_max(out_cont[i].e))
 					{
+					change g(m.get_size());
 					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c); //Yao added 20240309 according to VC_GAG
 					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, true); //20240309 According to VC_GAG
 					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, true);

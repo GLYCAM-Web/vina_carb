@@ -473,7 +473,8 @@ const double chpi_vertical_optimum_h = 2.80;
 //const double chpi_miu_h = 3.02, chpi_sigma_h = 0.91, chpi_const_h = 0.45, chpi_miu_h2 = 5.14, chpi_sigma_h2 = 0.38, chpi_const_h2 = 0.014;
 //const double chpi_rc = 3.05, chpi_ofs = -0.05, chpi_p = 4.55;
 
-//A, fitted to A horizontal
+//A, fitted to A horizontal(Not considering Vina phobic)
+//A, fitted to A horizontal(on top of Vina phobic)
 const double chpi_miu_h = 2.99, chpi_sigma_h = 0.29, chpi_const_h = 0.11, chpi_miu_h2 = 4.15, chpi_sigma_h2 = 1.45, chpi_const_h2 = 0.19;
 //A, fitted to A horizontal, removing gau1, gau2, phobic
 //const double chpi_miu_h = 2.96, chpi_sigma_h = 0.42, chpi_const_h = 0.26, chpi_miu_h2 = 4.89, chpi_sigma_h2 = 0.9, chpi_const_h2 = 0.14;
