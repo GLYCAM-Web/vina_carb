@@ -524,7 +524,7 @@ struct model {
 	sz num_r_aro_rings;
 	sz num_l_aro_rings;
 
-	pr eval_chpi(bool score_in_place);
+	fl eval_chpi(bool score_in_place);
 	void eval_chpi_c(pr& dH_minusTdS, bool score_in_place);
 	void eval_chpi_h(pr& dH_minusTdS, bool score_in_place);
 	void eval_chpi_c_ring(aliphatic_carbon_attribute& c_attr, ring_attribute& r_attr, pr& dH_minusTdS, bool score_in_place);
@@ -555,6 +555,13 @@ struct model {
 	pr eval_chpi_entropy_fast(fl r2h); //Notice that I'm using vertical distance itself, but the sqr of horizontal distance. 
 	pr eval_chpi_entropy_fast_r(fl r2h); //Notice that I'm using vertical distance itself, but the sqr of horizontal distance. 
 	pr eval_repulsion_fast(fl r2, fl cutoff);
+
+	pr eval_gauss1_deriv(fl r2);
+	pr eval_gauss2_deriv(fl r2);
+	pr eval_phobic_deriv(fl r2);
+	pr eval_gauss1_fast(fl r2);
+	pr eval_gauss2_fast(fl r2);
+	pr eval_phobic_fast(fl r2);
 
 	std::vector<aptrv> remove_duplicate_cycles(std::vector<aptrv>& cycles);
 	std::vector<aptrv> remove_redundant_cycles(std::vector<aptrv>& cycles, std::map<sz, szv>& subcycles, szv& returned_cycle_indices);
@@ -595,16 +602,25 @@ struct model {
 	fl weight_repulsion;
 	fl weight_gauss1;
 	fl weight_gauss2;
+	fl weight_hydrophobic;
 	bool chpi_explicit_hydrogen;
+	void undo_attraction_scoring(fl& score, bool score_in_place);
+	void undo_attraction_scoring_each_pair(aliphatic_carbon_attribute& c, ring_attribute& r, fl& e_gau1, fl& e_gau2, fl& e_phobic, bool score_in_place);
 
 	void build_chpi_smooth();
 	prv chpi_c_smooth;
 	prv chpi_h_smooth;
 	prv chpi_entropy_smooth;
+	prv gauss1_smooth;
+	prv gauss2_smooth;
+	prv phobic_smooth;
 
 	flv chpi_c_fast;
 	flv chpi_h_fast;
 	flv chpi_entropy_fast;
+	flv gauss1_fast;
+	flv gauss2_fast;
+	flv phobic_fast;
 
 	fl prec_factor;
 	prv gd_dims;

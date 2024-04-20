@@ -202,8 +202,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
                 log << "    cat-pi      : " << term_values[5]*weights[5] << '\n';
                 log << "    ch-pi       : " << term_values[6]*weights[6] << '\n';
 
-		pr chpi_dH_TdS = m.eval_chpi(true);
-		fl chpi_dG = m.weight_chpi * (chpi_dH_TdS.first - chpi_dH_TdS.second);
+		fl chpi_dG = m.eval_chpi(true);
 		//fl chpi_dG = m.weight_chpi * chpi_dH_TdS.first + chpi_dH_TdS.second;
                 log << "    CH-π(ΔG)   : " << chpi_dG << '\n';
 		log << "    qrepulsion  : " << term_values[7]*weights[7] << '\n';
@@ -269,6 +268,7 @@ void do_search(model& m, const boost::optional<model>& ref, const scoring_functi
 			VINA_FOR_IN(i, out_cont)
 				if(not_max(out_cont[i].e))
 					{
+					change g(m.get_size());
 					fl intra = m.eval_intramolecular(prec, authentic_v, out_cont[i].c); //Yao added 20240309 according to VC_GAG
 					out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, intra, true); //20240309 According to VC_GAG
 					//out_cont[i].e = m.eval_adjusted(sf, prec, nc, authentic_v, out_cont[i].c, best_mode_intramolecular_energy, true);
@@ -745,6 +745,7 @@ Thank you!\n";
 		m.weight_repulsion = weight_repulsion;
 		m.weight_gauss1 = weight_gauss1;
 		m.weight_gauss2 = weight_gauss2;
+		m.weight_hydrophobic = weight_hydrophobic;
 		m.chpi_explicit_hydrogen = chpi_use_hydrogen;
 		m.build_residue_info();
 		m.build_ar_ring_info();
